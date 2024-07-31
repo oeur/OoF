@@ -132,11 +132,11 @@ def run_oti_analysis(simdir, simnum, species, zcut):
         res = model_list[i].optimize(init_params_list[i], objective="gaussian", bounds=bounds_list[i], **data_kw_list[i])
         res_list.append(res)
 
-    return res_list
+    return res_list, bdata_list
 
 def plot_oti_results(simdir, simnum, species, zcut):
     data_vols = subselect_solar_cyls(simdir, simnum, species, zcut)
-    res_list = run_oti_analysis(simdir, simnum, species, zcut)
+    res_list, bdata_list = run_oti_analysis(simdir, simnum, species, zcut)
     for i in range(len(data_vols['z'])):
         fig, axes = plt.subplots(1, 3, figsize=(16, 6), sharex=True, sharey=True, constrained_layout=True)
         
@@ -158,8 +158,8 @@ def plot_oti_results(simdir, simnum, species, zcut):
         
         model_feh = model_list[i].get_label(bdata_list[i]["pos"], bdata_list[i]["vel"], res_list[i].params)
         cs = axes[1].pcolormesh(
-            bdata["vel"].to_value(u.km / u.s),
-            bdata["pos"].to_value(u.kpc),
+            bdata_list[i]["vel"].to_value(u.km / u.s),
+            bdata_list[i]["pos"].to_value(u.kpc),
             model_feh,
             cmap=cmr.torch,
             rasterized=True,
@@ -171,9 +171,9 @@ def plot_oti_results(simdir, simnum, species, zcut):
         axes[1].set_xlim(-150, 150)
         
         cs = axes[2].pcolormesh(
-            bdata["vel"].to_value(u.km / u.s),
-            bdata["pos"].to_value(u.kpc),
-            (bdata["label"] - model_feh) / bdata["label_err"],
+            bdata_list[i]["vel"].to_value(u.km / u.s),
+            bdata_list[i]["pos"].to_value(u.kpc),
+            (bdata_list[i]["label"] - model_feh) / bdata_list[i]["label_err"],
             cmap="RdBu_r",
             vmin=-3,
             vmax=3,
