@@ -9,11 +9,14 @@ import astropy.table as at
 import astropy.units as u
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
+import pandas as pd
 import numpy as np
 import jax
 jax.config.update('jax_enable_x64', True)
 import jax.numpy as jnp
 import jaxopt
+from statistics import mean
 import scipy.interpolate as sci
 from astropy.stats import median_absolute_deviation as MAD
 from gala.units import UnitSystem, galactic
@@ -258,7 +261,7 @@ def generate_gal_cyl_feh_mgfe_plot(simdir, simnum, species, zcut): #use zcut=1.5
     data_vols = subselect_solar_cyls(simdir, simnum, 'star', zcut)
     colors = [cmr.infinity(i / len(data_vols['z'])) for i in range(len(data_vols['z']))]
     plt.style.use('default')
-    plt.rcParams["figure.figsize"] = (9, 12) #previously (20,8) with 1 row 2 cols
+    plt.rcParams["figure.figsize"] = (9, 12)
 
 
     fig, axs = plt.subplots(2, 1, sharex=True, sharey=True)
@@ -282,7 +285,6 @@ def generate_gal_cyl_feh_mgfe_plot(simdir, simnum, species, zcut): #use zcut=1.5
     for i in range(len(data_vols['x'])):
         center_x = float(x_[i])
         center_y = float(y_[i])
-        #plt.scatter(data_vols['x'][i], data_vols['y'][i], c=colors[i], alpha=0.1)
         circle = mpatches.Circle((center_x, center_y), radius=np.sqrt(2.4), edgecolor=colors[i], fill=False, linewidth=3.0)
         underlay = mpatches.Circle((center_x, center_y), radius=np.sqrt(2.4), edgecolor='black', fill=False, linewidth=4.5)
         ax.add_patch(underlay)
@@ -314,6 +316,132 @@ def generate_gal_cyl_feh_mgfe_plot(simdir, simnum, species, zcut): #use zcut=1.5
     ax.tick_params(axis='both', which='major', labelsize=25, width=2, length=10)
     ax.set_xlabel('', fontsize=25)
     ax.set_ylabel('y [kpc]', fontsize=25)  
+    plt.subplots_adjust(hspace=0.05)
+    plt.tight_layout()
+    plt.show()
+
+def generate_vertical_feh_mgfe_profile_plot(simdir, simnum, species, zcut): #use zcut=10
+    data_vols = subselect_solar_cyls(simdir, simnum, species, zcut)
+    angles = np.linspace(0, 360, 16, endpoint=False)
+    theta = np.radians(angles)
+    x_ = np.cos(theta)*8
+    y_ = np.sin(theta)*8
+    # Masked for low vz (-10 to 10 km/s)
+    data_keys = ['vz', 'z', 'feh', 'mgfe']
+    masked_data = {key: [] for key in data_keys}
+
+    for i in range(len(data_vols['x'])):
+        mask_low_vz = np.where(np.abs(data_vols['vz'][i]) <= 10)
+        mask_low_vz_indices = mask_low_vz[0]
+        
+        for key in data_keys:
+            data_from_dict = data_vols[key]
+            masked_data[key].append(data_from_dict[i][mask_low_vz_indices])
+
+    def best_fit_slope_and_intercept(xs, ys):
+        xy_mean = mean(x * y for x, y in zip(xs, ys)) #
+        x_squared_mean = mean(x**2 for x in xs)
+        x_mean = mean(xs)
+        y_mean = mean(ys)
+        m = (xy_mean - x_mean * y_mean) / (x_squared_mean - x_mean**2) #cov(x,y)/var(x)
+        b = y_mean - m * x_mean
+        return m, b
+    slopes_abs_z = {key: [] for key in data_keys}
+    int_abs_z = {key: [] for key in data_keys}
+
+    for i in range(len(data_vols['x'])):
+        for key in data_keys:
+            x_values = masked_data['z'][i]
+            y_values = masked_data[key][i]
+            
+            # using absolute values of z
+            abs_x_values = [abs(x) for x in x_values]
+            corresponding_y_values = y_values  # y_values remain unchanged
+
+            slope, intercept = best_fit_slope_and_intercept(abs_x_values, corresponding_y_values) 
+            slopes_abs_z[key].append(slope)
+            int_abs_z[key].append(intercept)
+
+    best_fit_abs = {key: [] for key in data_keys}
+    z_abs = []
+
+    for i in range(len(data_vols['x'])):
+        for key in data_keys:
+            x_values = masked_data['z'][i]
+            y_values = masked_data[key][i]
+            
+            # using absolute values of z
+            abs_x_values = [abs(x) for x in x_values]
+            bf = (slopes_abs_z[key][i] * np.array(abs_x_values)) + int_abs_z[key][i]
+            best_fit_abs[key].append(bf)
+        z_abs.append(np.array(abs_x_values))
+    mean_m_feh = np.mean(slopes_abs_z['feh'])
+    mean_b_feh = np.mean(int_abs_z['feh'])
+    median_m_feh = np.median(slopes_abs_z['feh'])
+    median_b_feh = np.median(int_abs_z['feh'])
+
+    mean_m_mgfe = np.mean(slopes_abs_z['mgfe'])
+    mean_b_mgfe = np.mean(int_abs_z['mgfe'])
+    median_m_mgfe = np.median(slopes_abs_z['mgfe'])
+    median_b_mgfe = np.median(int_abs_z['mgfe'])
+    print(mean_m_feh, mean_b_feh, np.std(slopes_abs_z['feh']))
+    print(mean_m_mgfe, mean_b_mgfe, np.std(slopes_abs_z['mgfe']))
+    bf_mean = (mean_m_feh*np.array(z_abs[0]))+mean_b_feh
+    bf_median = (median_m_feh*np.array(z_abs[0]))+median_b_feh
+    ub_mean = (mean_m_feh+np.std(slopes_abs_z['feh']))*z_abs[0]+(mean_b_feh+np.std(int_abs_z['feh']))
+    lb_mean = (mean_m_feh-np.std(slopes_abs_z['feh']))*z_abs[0]+(mean_b_feh-np.std(int_abs_z['feh']))
+    ub_median = (median_m_feh+np.std(slopes_abs_z['feh']))*z_abs[0]+(median_b_feh+np.std(int_abs_z['feh']))
+    lb_median = (median_m_feh-np.std(slopes_abs_z['feh']))*z_abs[0]+(median_b_feh-np.std(int_abs_z['feh']))
+    bf_mean_mgfe = (mean_m_mgfe*np.array(z_abs[0]))+mean_b_mgfe
+    bf_median_mgfe = (median_m_mgfe*np.array(z_abs[0]))+median_b_mgfe
+    column_names = ['z', 'feh']
+    graf_avg = pd.read_csv('https://drive.google.com/file/d/1yG98Un6vK9at9-I6oEs98idzAiBxtf2m/view?usp=drive_link', names=column_names, header=None, delimiter='\t') 
+    graf_ub = pd.read_csv('https://drive.google.com/file/d/1yc84PWXCw-IRF3Mv6ZRjIKUI2flzmgoe/view?usp=drive_link', names=column_names, header=None, delimiter='\t') 
+    graf_lb = pd.read_csv('https://drive.google.com/file/d/1HyFKRguGFGFt2vf0p1oENHcI02fkExpA/view?usp=drive_link', names=column_names, header=None, delimiter='\t') 
+    ub = ((mean_m_feh+np.std(slopes_abs_z['feh']))*np.array(z_abs[0]))+(mean_b_feh+np.std(int_abs_z['feh']))
+    lb = ((mean_m_feh-np.std(slopes_abs_z['feh']))*np.array(z_abs[0]))+(mean_b_feh-np.std(int_abs_z['feh']))
+    ub3 = ((mean_m_feh+3*np.std(slopes_abs_z['feh']))*np.array(z_abs[0]))+(mean_b_feh+3*np.std(int_abs_z['feh']))
+    lb3 = ((mean_m_feh-3*np.std(slopes_abs_z['feh']))*np.array(z_abs[0]))+(mean_b_feh-3*np.std(int_abs_z['feh']))
+    ub_mgfe = ((mean_m_mgfe+np.std(slopes_abs_z['mgfe']))*np.array(z_abs[0]))+(mean_b_mgfe+np.std(int_abs_z['mgfe']))
+    lb_mgfe = ((mean_m_mgfe-np.std(slopes_abs_z['mgfe']))*np.array(z_abs[0]))+(mean_b_mgfe-np.std(int_abs_z['mgfe']))
+    ub3_mgfe = ((mean_m_mgfe+3*np.std(slopes_abs_z['mgfe']))*np.array(z_abs[0]))+(mean_b_mgfe+3*np.std(int_abs_z['mgfe']))
+    lb3_mgfe = ((mean_m_mgfe-3*np.std(slopes_abs_z['mgfe']))*np.array(z_abs[0]))+(mean_b_mgfe-3*np.std(int_abs_z['mgfe']))
+    plt.style.use('default')
+    plt.rcParams["figure.figsize"] = (9, 12)
+
+
+    fig, axs = plt.subplots(2, 1, sharex=True, sharey=False)
+    colors = [cmr.infinity(i / 15) for i in range(16)]
+    # MgFe
+    ax = axs[1]
+    ax.plot(z_abs[0], bf_mean_mgfe, c='black', ls='-', linewidth=2.5, label='m12i mean best-fit', zorder=10)
+    ax.fill_between(z_abs[0][3884:5778], ub3_mgfe[3884:5778], lb3_mgfe[3884:5778], color='black', alpha=0.4, label=r'3-$\sigma$', interpolate = True)
+    ax.set_ylim(0.1, 0.35)
+    ax.set_xlim(0, 1.5)
+    ax.tick_params(axis='both', which='major', labelsize=10)
+    ax.set_xlabel(fr"$|z|$ [{u.kpc:latex_inline}]", ha='center', va='center', fontsize=25, labelpad=30)
+    ax.set_ylabel(r"[Mg/Fe] [dex]", ha='center', va='center', rotation='vertical', fontsize=25, labelpad=30)
+    ax.tick_params(axis='x', labelsize=25)
+    ax.tick_params(axis='y', labelsize=25)
+    ax.legend(fontsize=18)
+    ax.tick_params(axis='both', which='major', labelsize=25, width=2, length=10)
+    ax.text(0.05, 0.13, r'$\frac{d[\mathrm{Mg/Fe}]}{d\mathrm{z}}=0.014\ [\mathrm{dex}\ \mathrm{kpc}^{-1}]$', c='black',fontsize=25)
+
+    #FeH
+    ax = axs[0]
+    ax.plot(z_abs[0], bf_mean, c='black', ls='-', linewidth=2.5, label='m12i mean best-fit', zorder=10)
+    ax.fill_between(z_abs[0][3884:5778], ub3[3884:5778], lb3[3884:5778], color='black', alpha=0.4, label=r'3-$\sigma$', interpolate = True)
+    ax.plot(graf_avg['z'], graf_avg['feh'], color=colors[15], linestyle='--', label='Mean (Graf et al. 2024)', alpha=0.75, zorder=6)
+    ax.fill_between(graf_ub['z'], graf_lb['feh'], graf_ub['feh'], color=colors[15], alpha=0.1, label=r'1-$\sigma$', zorder=5)
+    ax.set_ylim(-0.45, 0.2)
+    ax.set_xlim(0, 1.5)
+    ax.tick_params(axis='both', which='major', labelsize=10)
+    ax.set_ylabel(r"[Fe/H] [dex]", ha='center', va='center', rotation='vertical', fontsize=25, labelpad=30)
+    ax.tick_params(axis='x', labelsize=25)
+    ax.tick_params(axis='y', labelsize=25)
+    ax.tick_params(axis='both', which='major', labelsize=25, width=2, length=10)
+    ax.legend(fontsize=18)
+    ax.text(0.05, -0.36, r'$\frac{d[\mathrm{Fe/H}]}{d\mathrm{z}}=-0.129\ [\mathrm{dex}\ \mathrm{kpc}^{-1}]$', c='black', fontsize=25)
     plt.subplots_adjust(hspace=0.05)
     plt.tight_layout()
     plt.show()
