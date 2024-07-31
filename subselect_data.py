@@ -1,11 +1,11 @@
-from .load_data import load_simulation_data
+from load_data import load_simulation_data
 import numpy as np
 
-def subselect_solar_cyls(simdir, simnum, zcut):
+def subselect_solar_cyls(simdir, simnum, species, zcut):
     # Unpack all returned values
     (rxyz, Rxy, Phixy, Zxy, Vrxy, Vphixy, Vzxy, x, y, z, 
      vx, vy, vz, ax, ay, az, age, mass, feh, mgfe, 
-     pos_stars, pos, dist_stars, vel_stars, vels) = load_simulation_data(simdir, simnum)
+     pos_stars, pos, dist_stars, vel_stars, vels) = load_simulation_data(simdir, simnum, species)
     # Subselect the data
     angles = np.linspace(0, 360, 16, endpoint=False)
     theta = np.radians(angles)
