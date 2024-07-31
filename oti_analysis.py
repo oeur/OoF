@@ -135,6 +135,7 @@ def run_oti_analysis(simdir, simnum, species, zcut):
     return res_list
 
 def plot_oti_results(simdir, simnum, species, zcut):
+    data_vols = subselect_solar_cyls(simdir, simnum, species, zcut)
     res_list = run_oti_analysis(simdir, simnum, species, zcut)
     for i in range(len(data_vols['z'])):
         fig, axes = plt.subplots(1, 3, figsize=(16, 6), sharex=True, sharey=True, constrained_layout=True)
