@@ -281,7 +281,8 @@ def generate_gal_cyl_feh_mgfe_plot(simdir, simnum, species, zcut): #use zcut=1.5
     cbar = fig.colorbar(cs, ax=ax)
     cbar.set_label(r"$\langle$[Mg/Fe]$\rangle$ [dex]", fontsize=25, rotation=270, labelpad=30)
     cbar.ax.tick_params(labelsize=25)
-
+    cbar.formatter = ticker.FormatStrFormatter('%.2f')  # Set to 2 significant figures
+    cbar.update_ticks()
     for i in range(len(data_vols['x'])):
         center_x = float(x_[i])
         center_y = float(y_[i])
@@ -300,8 +301,10 @@ def generate_gal_cyl_feh_mgfe_plot(simdir, simnum, species, zcut): #use zcut=1.5
     mean_feh, xe, ye, bn = scipy.stats.binned_statistic_2d(x_masked, y_masked, feh_masked, statistic='mean', range=[[-15, 15], [-15, 15]], bins=[num_bins_x,num_bins_y])
     cs = ax.pcolormesh(xe, ye, mean_feh.T, cmap='RdBu_r', vmin=-0.5, vmax=0.3) #10.9 to 0.0
     cbar = fig.colorbar(cs, ax=ax)
-    cbar.set_label(r"$\langle$[Fe/H]$\rangle$ [dex]", fontsize=25, rotation=270, labelpad=30)
-
+    cbar.set_label(r"$\langle$[Fe/H]$\rangle$ [dex]", fontsize=25, rotation=270, labelpad=30)    
+    cbar.ax.tick_params(labelsize=25)
+    cbar.formatter = ticker.FormatStrFormatter('%.2f')  # Set to 2 significant figures
+    cbar.update_ticks()
     for i in range(len(data_vols['x'])):
         center_x = float(x_[i])
         center_y = float(y_[i])
@@ -445,3 +448,127 @@ def generate_vertical_feh_mgfe_profile_plot(simdir, simnum, species, zcut): #use
     plt.subplots_adjust(hspace=0.05)
     plt.tight_layout()
     plt.show()
+
+def generate_azim_avgd_met_grad_plot(simdir, simnum, species, zcut): #use zcut=10
+    data_vols = subselect_solar_cyls(simdir, simnum, species, zcut)
+    z_array_list = []
+    vz_array_list = []
+    max_z_list = []
+    bdata_list_mgfe = []
+
+    for i in range(len(data_vols['x'])):
+        z_array = data_vols['z'][i] * u.kpc
+        vz_array = data_vols['vz'][i] * (u.km / u.s)
+        
+        z_array_list.append(z_array)
+        vz_array_list.append(vz_array)
+        
+        max_z = np.round(3 * 1.5 * MAD(z_array), 1)
+        max_vz = np.round(3 * 1.5 * MAD(vz_array), 0)
+        
+        max_z_list.append(max_z)
+        
+        zvz_bins = {
+            "pos": np.linspace(-max_z, max_z, 101),
+            "vel": np.linspace(-max_vz, max_vz, 101),
+        }
+        
+        bdata = oti.data.get_binned_label(
+            z_array,
+            vz_array,
+            label=data_vols['mgfe'][i],
+            bins=zvz_bins,
+            units=galactic,
+            s_N_thresh=32,
+        )
+        bdata_list_mgfe.append(bdata)
+    bdata_list_feh = []
+
+    for i in range(len(data_vols['x'])):
+        z_array = data_vols['z'][i] * u.kpc
+        vz_array = data_vols['vz'][i] * (u.km / u.s)
+        max_z = np.round(3 * 1.5 * MAD(z_array), 1)
+        max_vz = np.round(3 * 1.5 * MAD(vz_array), 0)
+        zvz_bins = {
+            "pos": np.linspace(-max_z, max_z, 101),
+            "vel": np.linspace(-max_vz, max_vz, 101),
+        }
+        
+        bdata = oti.data.get_binned_label(
+            z_array,
+            vz_array,
+            label=data_vols['feh'][i],
+            bins=zvz_bins,
+            units=galactic,
+            s_N_thresh=32,
+        )
+        bdata_list_feh.append(bdata)
+    plt.style.use('default')
+    plt.rcParams["figure.figsize"] = (9, 12)
+
+
+    fig, axs = plt.subplots(2, 1, sharex=True, sharey=True)
+    #FeH
+    ax = axs[0]
+    sum_vz = np.zeros((100, 100))
+    sum_z = np.zeros((100, 100))
+    sum_feh = np.zeros((100, 100))
+
+    for i in range(16):
+        sum_vz += bdata_list_feh[i]["vel"].to_value(u.km/u.s)
+        sum_z += bdata_list_feh[i]["pos"].to_value(u.kpc)
+        sum_feh += bdata_list_feh[i]["label"]
+
+    mean_vz = sum_vz / 16
+    mean_z = sum_z / 16
+    mean_feh = sum_feh / 16
+
+    X, Y = np.meshgrid(mean_vz[:,0], mean_z[0,:])
+    cs = ax.pcolormesh(X, Y, mean_feh, cmap=cmr.torch)
+
+    ax.tick_params(axis='both', which='major', labelsize=20)
+    ax.set_ylim(-3.5, 3.5)
+    ax.set_xlim(-150, 150)
+
+    cbar = plt.colorbar(cs, ax=ax,fraction=0.043, pad=0.04)
+    cbar.set_label(r"$\langle$[Fe/H]$\rangle$ [dex]", fontsize=20, rotation=270, labelpad=30)
+    cbar.ax.tick_params(labelsize=20)
+    ax.set_xlabel(f"", fontsize=20)
+    ax.set_ylabel(f"$z$ [{u.kpc:latex_inline}]", fontsize=20)
+    ax.tick_params(axis='both', which='major', labelsize=20)
+    ax.set_aspect(40)
+
+
+    # MgFe
+    ax = axs[1]
+    sum_vz = np.zeros((100, 100))
+    sum_z = np.zeros((100, 100))
+    sum_mgfe = np.zeros((100, 100))
+
+    for i in range(16):
+        sum_vz += bdata_list_mgfe[i]["vel"].to_value(u.km/u.s)
+        sum_z += bdata_list_mgfe[i]["pos"].to_value(u.kpc)
+        sum_mgfe += bdata_list_mgfe[i]["label"]
+
+    mean_vz = sum_vz / 16
+    mean_z = sum_z / 16
+    mean_mgfe = sum_mgfe / 16
+
+    X, Y = np.meshgrid(mean_vz[:,0], mean_z[0,:])
+    cs = ax.pcolormesh(X, Y, mean_mgfe, vmin=0.18, vmax=0.35, cmap=cmr.torch)
+
+    ax.tick_params(axis='both', which='major', labelsize=20)
+    ax.set_ylim(-2.5, 2.5)
+    ax.set_xlim(-100, 100)
+
+    cbar = plt.colorbar(cs, ax=ax,fraction=0.043, pad=0.04)
+    cbar.set_label(r"$\langle$[Mg/Fe]$\rangle$ [dex]", fontsize=20, rotation=270, labelpad=30)
+    cbar.ax.tick_params(labelsize=20)
+    ax.set_xlabel(f"$v_z$ [{u.km/u.s:latex_inline}]", fontsize=20)
+    ax.set_ylabel(f"$z$ [{u.kpc:latex_inline}]", fontsize=20)
+    ax.tick_params(axis='both', which='major', labelsize=20)
+    ax.set_aspect(40)
+    plt.subplots_adjust(wspace=-0.4)
+    plt.tight_layout()
+    plt.show()
+
