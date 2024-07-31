@@ -1,10 +1,13 @@
 import gizmo_analysis as gizmo
 
-def load_simulation_data(simdir, snapnum):
+def load_simulation_data(simdir, snapnum, species):
     '''
     Load in the FIRE simulation data and read in specific arrays of data.
+    simdir (str): filepath to directory where sim is located
+    snapnum (int): snapshot number (e.g., 600)
+    species (str): 'star', 'gas', 'dark' or 'all'
     '''
-    part = gizmo.gizmo_io.Read.read_snapshots(['all'], 'index', snapnum, simulation_directory=simdir, assign_hosts_rotation=True, assign_hosts=True)
+    part = gizmo.gizmo_io.Read.read_snapshots([species], 'index', snapnum, simulation_directory=simdir, assign_hosts_rotation=True, assign_hosts=True)
     part['star'].prop('host.distance.principal.cylindrical')
     rxyz   = part['star'].prop('host.distance.total')
     Rxy    = part['star'].prop('host.distance.principal.cylindrical')[:,0]
