@@ -1,3 +1,4 @@
+from subselect_data import subselect_solar_cyls
 from astropy.constants import G
 from astropy import constants as const
 import astropy.coordinates as coord
@@ -31,7 +32,7 @@ import gizmo_analysis as gizmo
 import utilities as ut
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import cmasher as cmr
-%matplotlib inline
+#%matplotlib inline
 
 plt.rcParams.update(plt.rcParamsDefault)
 plt.rcParams.update({'font.size': 20})
