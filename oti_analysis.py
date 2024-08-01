@@ -43,7 +43,7 @@ plt.rcParams['xtick.labelsize'] = 20
 plt.rcParams['ytick.labelsize'] = 20
 
 def run_oti_analysis(simdir, simnum, species, Rcyl, numvols, zcut):
-    data_vols = subselect_solar_cyls(simdir, simnum, species, Rcyl, numvols, zcut)
+    data_vols = subselect_solar_cyls(simdir, simnum, species, Rcyl, numvols, zcut) #use zcut=10
     z_array_list = []
     vz_array_list = []
     max_z_list = []
@@ -134,61 +134,59 @@ def run_oti_analysis(simdir, simnum, species, Rcyl, numvols, zcut):
 
     return res_list, bdata_list, model_list
 
-def plot_oti_results(simdir, simnum, species, Rcyl, numvols, zcut):
-    data_vols = subselect_solar_cyls(simdir, simnum, species, Rcyl, numvols, zcut)
-    res_list, bdata_list, model_list = run_oti_analysis(simdir, simnum, species, zcut)
-    for i in range(len(data_vols['z'])):
-        fig, axes = plt.subplots(1, 3, figsize=(16, 6), sharex=True, sharey=True, constrained_layout=True)
-        
-        cs = axes[0].pcolormesh(
-        bdata_list[i]["vel"].to_value(u.km/u.s),
-        bdata_list[i]["pos"].to_value(u.kpc),
-        bdata_list[i]["label"],
+def plot_oti_results(simdir, simnum, species, Rcyl, numvols, zcut, idx):
+    res_list, bdata_list, model_list = run_oti_analysis(simdir, simnum, species, Rcyl, numvols, zcut)
+    fig, axes = plt.subplots(1, 3, figsize=(16, 6), sharex=True, sharey=True, constrained_layout=True)
+    
+    cs = axes[0].pcolormesh(
+    bdata_list[idx]["vel"].to_value(u.km/u.s),
+    bdata_list[idx]["pos"].to_value(u.kpc),
+    bdata_list[idx]["label"],
+    vmin=-1.75,
+    vmax=0,
+    cmap=cmr.torch
+    )
+    cb = fig.colorbar(cs, ax=axes[0:2],fraction=0.023, pad=0.02)
+    cb.set_label(r"$\langle$[Fe/H]$\rangle$ [dex]", fontsize=25, rotation=270, labelpad=30)
+    cb.ax.set_ylim(-1.75, 0)
+    cb.ax.yaxis.set_tick_params(labelsize=25)
+    axes[0].set_aspect(40)
+    axes[0].set_ylim(-3.5, 3.5)
+    axes[0].set_xlim(-150, 150)
+    
+    model_feh = model_list[idx].get_label(bdata_list[idx]["pos"], bdata_list[idx]["vel"], res_list[idx].params)
+    cs = axes[1].pcolormesh(
+        bdata_list[idx]["vel"].to_value(u.km / u.s),
+        bdata_list[idx]["pos"].to_value(u.kpc),
+        model_feh,
+        cmap=cmr.torch,
+        rasterized=True,
         vmin=-1.75,
         vmax=0,
-        cmap=cmr.torch
-        )
-        cb = fig.colorbar(cs, ax=axes[0:2],fraction=0.023, pad=0.02)
-        cb.set_label(r"$\langle$[Fe/H]$\rangle$ [dex]", fontsize=25, rotation=270, labelpad=30)
-        cb.ax.set_ylim(-1.75, 0)
-        cb.ax.yaxis.set_tick_params(labelsize=25)
-        axes[0].set_aspect(40)
-        axes[0].set_ylim(-3.5, 3.5)
-        axes[0].set_xlim(-150, 150)
+    )
+    axes[1].set_aspect(40)
+    axes[1].set_ylim(-3.5, 3.5)
+    axes[1].set_xlim(-150, 150)
+    
+    cs = axes[2].pcolormesh(
+        bdata_list[idx]["vel"].to_value(u.km / u.s),
+        bdata_list[idx]["pos"].to_value(u.kpc),
+        (bdata_list[idx]["label"] - model_feh) / bdata_list[idx]["label_err"],
+        cmap="RdBu_r",
+        vmin=-3,
+        vmax=3,
+        rasterized=True,
+    )
+    cb = fig.colorbar(cs, ax=axes[2],fraction=0.046, pad=0.04)
+    cb.set_label("(FIRE $-$ OTI) / error", fontsize=25, rotation=270, labelpad=30)
+    cb.ax.yaxis.set_tick_params(labelsize=25)
+    axes[2].set_aspect(40)
+    axes[0].set_ylabel(f"$z$ [{u.kpc:latex_inline}]", fontsize=25)
+    for ax in axes:
+        ax.set_xlabel(f"$v_z$ [{u.km/u.s:latex_inline}]", fontsize=25)
+        ax.tick_params(axis='both', which='major', labelsize=25)
         
-        model_feh = model_list[i].get_label(bdata_list[i]["pos"], bdata_list[i]["vel"], res_list[i].params)
-        cs = axes[1].pcolormesh(
-            bdata_list[i]["vel"].to_value(u.km / u.s),
-            bdata_list[i]["pos"].to_value(u.kpc),
-            model_feh,
-            cmap=cmr.torch,
-            rasterized=True,
-            vmin=-1.75,
-            vmax=0,
-        )
-        axes[1].set_aspect(40)
-        axes[1].set_ylim(-3.5, 3.5)
-        axes[1].set_xlim(-150, 150)
-        
-        cs = axes[2].pcolormesh(
-            bdata_list[i]["vel"].to_value(u.km / u.s),
-            bdata_list[i]["pos"].to_value(u.kpc),
-            (bdata_list[i]["label"] - model_feh) / bdata_list[i]["label_err"],
-            cmap="RdBu_r",
-            vmin=-3,
-            vmax=3,
-            rasterized=True,
-        )
-        cb = fig.colorbar(cs, ax=axes[2],fraction=0.046, pad=0.04)
-        cb.set_label("(FIRE $-$ OTI) / error", fontsize=25, rotation=270, labelpad=30)
-        cb.ax.yaxis.set_tick_params(labelsize=25)
-        axes[2].set_aspect(40)
-        axes[0].set_ylabel(f"$z$ [{u.kpc:latex_inline}]", fontsize=25)
-        for ax in axes:
-            ax.set_xlabel(f"$v_z$ [{u.km/u.s:latex_inline}]", fontsize=25)
-            ax.tick_params(axis='both', which='major', labelsize=25)
-            
-        axes[0].set_title(f"FIRE Data V{i+1}", fontsize=25)
-        axes[1].set_title("OTI Fitted Model", fontsize=25)
-        axes[2].set_title("Normalized Residuals", fontsize=25)
+    axes[0].set_title(f"FIRE Data V{idx+1}", fontsize=25)
+    axes[1].set_title("OTI Fitted Model", fontsize=25)
+    axes[2].set_title("Normalized Residuals", fontsize=25)
     plt.show() 
