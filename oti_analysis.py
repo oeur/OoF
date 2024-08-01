@@ -42,8 +42,8 @@ plt.rcParams['axes.labelsize'] = 20
 plt.rcParams['xtick.labelsize'] = 20
 plt.rcParams['ytick.labelsize'] = 20
 
-def run_oti_analysis(simdir, simnum, species, zcut):
-    data_vols = subselect_solar_cyls(simdir, simnum, species, zcut)
+def run_oti_analysis(simdir, simnum, species, Rcyl, numvols, zcut):
+    data_vols = subselect_solar_cyls(simdir, simnum, species, Rcyl, numvols, zcut)
     z_array_list = []
     vz_array_list = []
     max_z_list = []
@@ -134,8 +134,8 @@ def run_oti_analysis(simdir, simnum, species, zcut):
 
     return res_list, bdata_list, model_list
 
-def plot_oti_results(simdir, simnum, species, zcut):
-    data_vols = subselect_solar_cyls(simdir, simnum, species, zcut)
+def plot_oti_results(simdir, simnum, species, Rcyl, numvols, zcut):
+    data_vols = subselect_solar_cyls(simdir, simnum, species, Rcyl, numvols, zcut)
     res_list, bdata_list, model_list = run_oti_analysis(simdir, simnum, species, zcut)
     for i in range(len(data_vols['z'])):
         fig, axes = plt.subplots(1, 3, figsize=(16, 6), sharex=True, sharey=True, constrained_layout=True)

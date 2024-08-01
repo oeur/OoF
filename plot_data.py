@@ -47,7 +47,7 @@ plt.rcParams['axes.labelsize'] = 20
 plt.rcParams['xtick.labelsize'] = 20
 plt.rcParams['ytick.labelsize'] = 20
 
-def generate_surface_mass_density_plot(simdir, simnum, species1, species2, zcut): #use zcut=1.5
+def generate_surface_mass_density_plot(simdir, simnum, species1, species2, Rcyl, numvols, zcut): #use zcut=1.5
     '''
     Generate 2-panel surface mass density plot of FIRE gas and stellar data.
     simdir (str): filepath to directory where sim is located
@@ -63,7 +63,7 @@ def generate_surface_mass_density_plot(simdir, simnum, species1, species2, zcut)
     x_ = np.cos(theta)*8
     y_ = np.sin(theta)*8
     part_gas = gizmo.gizmo_io.Read.read_snapshots([species1], 'index', simnum, simulation_directory=simdir, assign_hosts_rotation=True, assign_hosts=True)
-    data_vols = subselect_solar_cyls(simdir, simnum, 'star', zcut)
+    data_vols = subselect_solar_cyls(simdir, simnum, 'star', Rcyl, numvols, zcut)
     colors = [cmr.infinity(i / len(data_vols['z'])) for i in range(len(data_vols['z']))]
     x_gas      = part_gas[species1].prop('host.distance.principal.cartesian')[:,0]
     y_gas      = part_gas[species1].prop('host.distance.principal.cartesian')[:,1]
@@ -172,7 +172,7 @@ def generate_surface_mass_density_plot(simdir, simnum, species1, species2, zcut)
     plt.tight_layout()
     plt.show()
 
-def generate_mean_stellar_motion_plot(simdir, simnum, species, zcut): #use zcut=1.5
+def generate_mean_stellar_motion_plot(simdir, simnum, species, Rcyl, numvols, zcut): #use zcut=1.5
     '''
     Generate 2-panel plot of mean stellar motion in the radial (R) and vertical (z) directions.
     simdir (str): filepath to directory where sim is located
@@ -191,7 +191,7 @@ def generate_mean_stellar_motion_plot(simdir, simnum, species, zcut): #use zcut=
 
     x_ = np.cos(theta)*8
     y_ = np.sin(theta)*8
-    data_vols = subselect_solar_cyls(simdir, simnum, 'star', zcut)
+    data_vols = subselect_solar_cyls(simdir, simnum, 'star', Rcyl, numvols, zcut)
     colors = [cmr.infinity(i / len(data_vols['z'])) for i in range(len(data_vols['z']))]
     plt.style.use('default')
     plt.rcParams["figure.figsize"] = (9, 12)
@@ -259,7 +259,7 @@ def generate_mean_stellar_motion_plot(simdir, simnum, species, zcut): #use zcut=
     plt.tight_layout()
     plt.show()
 
-def generate_gal_cyl_feh_mgfe_plot(simdir, simnum, species, zcut): #use zcut=1.5
+def generate_gal_cyl_feh_mgfe_plot(simdir, simnum, species, Rcyl, numvols, zcut): #use zcut=1.5
     '''
     Generate 2-panel plot of mean [Fe/H] and [Mg/Fe] in the Galactic cylinder.
     simdir (str): filepath to directory where sim is located
@@ -279,7 +279,7 @@ def generate_gal_cyl_feh_mgfe_plot(simdir, simnum, species, zcut): #use zcut=1.5
 
     x_ = np.cos(theta)*8
     y_ = np.sin(theta)*8
-    data_vols = subselect_solar_cyls(simdir, simnum, 'star', zcut)
+    data_vols = subselect_solar_cyls(simdir, simnum, 'star', Rcyl, numvols, zcut)
     colors = [cmr.infinity(i / len(data_vols['z'])) for i in range(len(data_vols['z']))]
     plt.style.use('default')
     plt.rcParams["figure.figsize"] = (9, 12)
@@ -344,7 +344,7 @@ def generate_gal_cyl_feh_mgfe_plot(simdir, simnum, species, zcut): #use zcut=1.5
     plt.tight_layout()
     plt.show()
 
-def generate_vertical_feh_mgfe_profile_plot(simdir, simnum, species, zcut): #use zcut=10
+def generate_vertical_feh_mgfe_profile_plot(simdir, simnum, species, Rcyl, numvols, zcut): #use zcut=10
     '''
     Generate 2-panel plot of vertical metallicity profiles for [Fe/H] and [Mg/Fe] (and a comparison with corresponding [Fe/H] plot from Graf et al. 2024).
     simdir (str): filepath to directory where sim is located
@@ -352,7 +352,7 @@ def generate_vertical_feh_mgfe_profile_plot(simdir, simnum, species, zcut): #use
     species (str): 'star', 'gas', 'dark' or 'all'
     zcut (float): value of the cut on |z|
     '''
-    data_vols = subselect_solar_cyls(simdir, simnum, species, zcut)
+    data_vols = subselect_solar_cyls(simdir, simnum, species, Rcyl, numvols, zcut)
     angles = np.linspace(0, 360, 16, endpoint=False)
     theta = np.radians(angles)
     x_ = np.cos(theta)*8
@@ -477,7 +477,7 @@ def generate_vertical_feh_mgfe_profile_plot(simdir, simnum, species, zcut): #use
     plt.tight_layout()
     plt.show()
 
-def generate_azim_avgd_met_grad_plot(simdir, simnum, species, zcut): #use zcut=10
+def generate_azim_avgd_met_grad_plot(simdir, simnum, species, Rcyl, numvols, zcut): #use zcut=10
     '''
     Generate 2-panel plot of azimuthally averaged metallicity gradient for [Fe/H] and [Mg/Fe].
     simdir (str): filepath to directory where sim is located
@@ -485,7 +485,7 @@ def generate_azim_avgd_met_grad_plot(simdir, simnum, species, zcut): #use zcut=1
     species (str): 'star', 'gas', 'dark' or 'all'
     zcut (float): value of the cut on |z|
     '''
-    data_vols = subselect_solar_cyls(simdir, simnum, species, zcut)
+    data_vols = subselect_solar_cyls(simdir, simnum, species, Rcyl, numvols, zcut)
     z_array_list = []
     vz_array_list = []
     max_z_list = []
@@ -607,7 +607,7 @@ def generate_azim_avgd_met_grad_plot(simdir, simnum, species, zcut): #use zcut=1
     plt.tight_layout()
     plt.show()
 
-def generate_data_model_residual_plot(simdir, simnum, species, zcut, idx):
+def generate_data_model_residual_plot(simdir, simnum, species, Rcyl, numvols, zcut, idx):
     '''
     Generate 3-panel plot of FIRE data, OTI best-fit model, and normalized residuals.
     simdir (str): filepath to directory where sim is located
@@ -616,7 +616,7 @@ def generate_data_model_residual_plot(simdir, simnum, species, zcut, idx):
     zcut (float): value of the cut on |z|
     idx (int): index of volume to plot
     '''
-    res_list, bdata_list, model_list = run_oti_analysis(simdir, simnum, species, zcut)
+    res_list, bdata_list, model_list = run_oti_analysis(simdir, simnum, species, Rcyl, numvols, zcut)
     fig, axes = plt.subplots(1, 3, figsize=(16, 6), sharex=True, sharey=True, constrained_layout=True)
         
     cs = axes[0].pcolormesh(
