@@ -677,6 +677,7 @@ def generate_data_model_residual_plot(simdir, simnum, species, Rcyl, numvols, zc
 
     
 def generate_vertical_acceleration_profiles_plot(simdir, simnum, species, Rcyl, numvols, zcut):
+    #https://drive.google.com/drive/folders/1srC6TzRdsJ-gH6cg3HvXUU9weHA5gwX8
     data_vols = subselect_solar_cyls(simdir, simnum, species, Rcyl, numvols, zcut)
     max_z_list = []
 
@@ -714,7 +715,7 @@ def generate_vertical_acceleration_profiles_plot(simdir, simnum, species, Rcyl, 
     #MCMC uncertainty
     accs_mcmc = []
     for i in range(16):
-        with open(f'vol-{i+1}-mcmc-results.pkl', 'rb') as file:
+        with open(f'./mcmc/vol-{i+1}-mcmc-results.pkl', 'rb') as file:
             mcmc_states, mcmc_params = pickle.load(file)
 
         accs = []
@@ -731,7 +732,7 @@ def generate_vertical_acceleration_profiles_plot(simdir, simnum, species, Rcyl, 
     #bootstrapping uncertainty
     accs_boots = []
     for i in range(16):
-        with open(f'bootstrap_res_v{i+1}.pkl', 'rb') as file:
+        with open(f'./boots/bootstrap_res_v{i+1}.pkl', 'rb') as file:
             bootstrap_params = pickle.load(file)
 
         accs = []
@@ -764,7 +765,7 @@ def generate_vertical_acceleration_profiles_plot(simdir, simnum, species, Rcyl, 
                 horizontalalignment='right', verticalalignment='top', transform=ax.transAxes, fontsize=30)
 
 
-        with open(f'bootstrap_res_v{i+1}.pkl', 'rb') as file:
+        with open(f'./boots/bootstrap_res_v{i+1}.pkl', 'rb') as file:
             bootstrap_params = pickle.load(file)
 
         accs = []
