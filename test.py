@@ -8,6 +8,7 @@ from plot_data import generate_gal_cyl_feh_mgfe_plot
 from plot_data import generate_vertical_feh_mgfe_profile_plot
 from plot_data import generate_azim_avgd_met_grad_plot
 from plot_data import generate_data_model_residual_plot
+from plot_data import generate_vertical_acceleration_profiles_plot
 simpath = '/Users/micahoeur/Dropbox/Research/Sarah/FIRE2_m12i_metal_diffusion/output_with_accel'
 snum = 600
 spcs = 'star'
@@ -31,4 +32,6 @@ spcs = 'star'
 #print("generate_azim_avgd_met_grad_plot ran successfully")
 #generate_data_model_residual_plot(simpath, snum, spcs, 8, 16, 10, 0)
 #print("generate_data_model_residual_plot ran successfully")
+generate_vertical_acceleration_profiles_plot(simpath, snum, spcs, 8, 16, 10)
+print("generate_vertical_acceleration_profiles_plot ran successfully")
 #print("all functions ran successfully")
