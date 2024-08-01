@@ -48,7 +48,14 @@ plt.rcParams['xtick.labelsize'] = 20
 plt.rcParams['ytick.labelsize'] = 20
 
 def generate_surface_mass_density_plot(simdir, simnum, species1, species2, zcut): #use zcut=1.5
-    #res_list = run_oti_analysis(simdir, simnum, species, zcut)
+    '''
+    Generate 2-panel surface mass density plot of FIRE gas and stellar data.
+    simdir (str): filepath to directory where sim is located
+    snapnum (int): snapshot number (e.g., 600)
+    species1 (str): first particle species, i.e.'gas'
+    species2 (str): second particle species, i.e. 'star'
+    zcut (float): value of the cut on |z|
+    '''
     #gas
     angles = np.linspace(0, 360, 16, endpoint=False)
     theta = np.radians(angles)
@@ -166,6 +173,13 @@ def generate_surface_mass_density_plot(simdir, simnum, species1, species2, zcut)
     plt.show()
 
 def generate_mean_stellar_motion_plot(simdir, simnum, species, zcut): #use zcut=1.5
+    '''
+    Generate 2-panel plot of mean stellar motion in the radial (R) and vertical (z) directions.
+    simdir (str): filepath to directory where sim is located
+    snapnum (int): snapshot number (e.g., 600)
+    species (str): 'star', 'gas', 'dark' or 'all'
+    zcut (float): value of the cut on |z|
+    '''
     part_star = gizmo.gizmo_io.Read.read_snapshots([species], 'index', simnum, simulation_directory=simdir, assign_hosts_rotation=True, assign_hosts=True)
     x  = part_star[species].prop('host.distance.principal.cartesian')[:,0]
     y  = part_star[species].prop('host.distance.principal.cartesian')[:,1]
@@ -246,6 +260,13 @@ def generate_mean_stellar_motion_plot(simdir, simnum, species, zcut): #use zcut=
     plt.show()
 
 def generate_gal_cyl_feh_mgfe_plot(simdir, simnum, species, zcut): #use zcut=1.5
+    '''
+    Generate 2-panel plot of mean [Fe/H] and [Mg/Fe] in the Galactic cylinder.
+    simdir (str): filepath to directory where sim is located
+    snapnum (int): snapshot number (e.g., 600)
+    species (str): 'star', 'gas', 'dark' or 'all'
+    zcut (float): value of the cut on |z|
+    '''
     part_star = gizmo.gizmo_io.Read.read_snapshots([species], 'index', simnum, simulation_directory=simdir, assign_hosts_rotation=True, assign_hosts=True)
     x  = part_star[species].prop('host.distance.principal.cartesian')[:,0]
     y  = part_star[species].prop('host.distance.principal.cartesian')[:,1]
@@ -324,6 +345,13 @@ def generate_gal_cyl_feh_mgfe_plot(simdir, simnum, species, zcut): #use zcut=1.5
     plt.show()
 
 def generate_vertical_feh_mgfe_profile_plot(simdir, simnum, species, zcut): #use zcut=10
+    '''
+    Generate 2-panel plot of vertical metallicity profiles for [Fe/H] and [Mg/Fe] (and a comparison with corresponding [Fe/H] plot from Graf et al. 2024).
+    simdir (str): filepath to directory where sim is located
+    snapnum (int): snapshot number (e.g., 600)
+    species (str): 'star', 'gas', 'dark' or 'all'
+    zcut (float): value of the cut on |z|
+    '''
     data_vols = subselect_solar_cyls(simdir, simnum, species, zcut)
     angles = np.linspace(0, 360, 16, endpoint=False)
     theta = np.radians(angles)
@@ -450,6 +478,13 @@ def generate_vertical_feh_mgfe_profile_plot(simdir, simnum, species, zcut): #use
     plt.show()
 
 def generate_azim_avgd_met_grad_plot(simdir, simnum, species, zcut): #use zcut=10
+    '''
+    Generate 2-panel plot of azimuthally averaged metallicity gradient for [Fe/H] and [Mg/Fe].
+    simdir (str): filepath to directory where sim is located
+    snapnum (int): snapshot number (e.g., 600)
+    species (str): 'star', 'gas', 'dark' or 'all'
+    zcut (float): value of the cut on |z|
+    '''
     data_vols = subselect_solar_cyls(simdir, simnum, species, zcut)
     z_array_list = []
     vz_array_list = []
@@ -572,3 +607,69 @@ def generate_azim_avgd_met_grad_plot(simdir, simnum, species, zcut): #use zcut=1
     plt.tight_layout()
     plt.show()
 
+def generate_data_model_residual_plot(simdir, simnum, species, zcut, idx):
+    '''
+    Generate 3-panel plot of FIRE data, OTI best-fit model, and normalized residuals.
+    simdir (str): filepath to directory where sim is located
+    snapnum (int): snapshot number (e.g., 600)
+    species (str): 'star', 'gas', 'dark' or 'all'
+    zcut (float): value of the cut on |z|
+    idx (int): index of volume to plot
+    '''
+    res_list, bdata_list, model_list = run_oti_analysis(simdir, simnum, species, zcut)
+    fig, axes = plt.subplots(1, 3, figsize=(16, 6), sharex=True, sharey=True, constrained_layout=True)
+        
+    cs = axes[0].pcolormesh(
+    bdata_list[idx]["vel"].to_value(u.km/u.s),
+    bdata_list[idx]["pos"].to_value(u.kpc),
+    bdata_list[idx]["label"],
+    vmin=-1.75,
+    vmax=0,
+    cmap=cmr.torch
+    )
+    cb = fig.colorbar(cs, ax=axes[0:2],fraction=0.023, pad=0.02)
+    cb.set_label(r"$\langle$[Fe/H]$\rangle$ [dex]", fontsize=25, rotation=270, labelpad=30)
+    cb.ax.set_ylim(-1.75, 0)
+    cb.ax.yaxis.set_tick_params(labelsize=25)
+    axes[0].set_aspect(40)
+    axes[0].set_ylim(-3.5, 3.5)
+    axes[0].set_xlim(-150, 150)
+    
+    model_feh = model_list[idx].get_label(bdata_list[idx]["pos"], bdata_list[idx]["vel"], res_list[idx].params)
+    cs = axes[1].pcolormesh(
+        bdata_list[idx]["vel"].to_value(u.km / u.s),
+        bdata_list[idx]["pos"].to_value(u.kpc),
+        model_feh,
+        cmap=cmr.torch,
+        rasterized=True,
+        vmin=-1.75,
+        vmax=0,
+    )
+    axes[1].set_aspect(40)
+    axes[1].set_ylim(-3.5, 3.5)
+    axes[1].set_xlim(-150, 150)
+    
+    cs = axes[2].pcolormesh(
+        bdata_list[idx]["vel"].to_value(u.km / u.s),
+        bdata_list[idx]["pos"].to_value(u.kpc),
+        (bdata_list[idx]["label"] - model_feh) / bdata_list[idx]["label_err"],
+        cmap="RdBu_r",
+        vmin=-3,
+        vmax=3,
+        rasterized=True,
+    )
+    cb = fig.colorbar(cs, ax=axes[2],fraction=0.046, pad=0.04)
+    cb.set_label("(FIRE $-$ OTI) / error", fontsize=25, rotation=270, labelpad=30)
+    cb.ax.yaxis.set_tick_params(labelsize=25)
+    axes[2].set_aspect(40)
+    axes[0].set_ylabel(f"$z$ [{u.kpc:latex_inline}]", fontsize=25)
+    for ax in axes:
+        ax.set_xlabel(f"$v_z$ [{u.km/u.s:latex_inline}]", fontsize=25)
+        ax.tick_params(axis='both', which='major', labelsize=25)
+        
+    axes[0].set_title(f"FIRE Data V{idx+1}", fontsize=25)
+    axes[1].set_title("OTI Fitted Model", fontsize=25)
+    axes[2].set_title("Normalized Residuals", fontsize=25)
+    plt.show() 
+
+    
