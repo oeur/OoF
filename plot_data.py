@@ -39,6 +39,9 @@ import utilities as ut
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import cmasher as cmr
 from matplotlib.patheffects import withStroke
+import requests
+import pickle
+import io
 plt.rcParams.update(plt.rcParamsDefault)
 plt.rcParams.update({'font.size': 20})
 
@@ -442,7 +445,7 @@ def generate_vertical_feh_mgfe_profile_plot(simdir, simnum, species, Rcyl, numvo
 
 
     fig, axs = plt.subplots(2, 1, sharex=True, sharey=False)
-    colors = [cmr.infinity(i / 15) for i in range(16)]
+    colors = [cmr.infinity(i / 16) for i in range(16)]
     # MgFe
     ax = axs[1]
     ax.plot(z_abs[0], bf_mean_mgfe, c='black', ls='-', linewidth=2.5, label='m12i mean best-fit', zorder=10)
@@ -673,3 +676,130 @@ def generate_data_model_residual_plot(simdir, simnum, species, Rcyl, numvols, zc
     plt.show() 
 
     
+def generate_vertical_acceleration_profiles_plot(simdir, simnum, species, Rcyl, numvols, zcut):
+    data_vols = subselect_solar_cyls(simdir, simnum, species, Rcyl, numvols, zcut)
+    max_z_list = []
+
+    for i in range(len(data_vols['x'])):
+        z_array = data_vols['z'][i] * u.kpc
+        max_z = np.round(3 * 1.5 * MAD(z_array), 1)
+        
+        max_z_list.append(max_z)
+    res_list, bdata_list, model_list = run_oti_analysis(simdir, simnum, species, Rcyl, numvols, zcut)
+    print("res list finished")
+    fire_az_binned = []
+    bc = []
+
+    for i in range(len(data_vols['x'])):
+        # Sort z_vols and accelerations arrays together based on z_vols
+        sorted_indices = sorted(range(len(data_vols['z'][i])), key=lambda k: data_vols['z'][i][k])
+        sorted_z_vols = [data_vols['z'][i][idx] for idx in sorted_indices]
+        sorted_az_vols = [data_vols['az'][i][idx] for idx in sorted_indices]
+        
+        binned_az, bin_edges, binnumber = stats.binned_statistic(sorted_z_vols, sorted_az_vols, 'mean', bins=np.linspace(-max_z_list[i], max_z_list[i], 101))
+        fire_az_binned.append(binned_az)
+        bin_width = (bin_edges[1] - bin_edges[0])
+        bin_centers = bin_edges[1:] - bin_width/2
+        bc.append(bin_centers)
+
+    zgrid_list = []
+    bestfit_az_list = []
+
+    for i in range(len(data_vols['x'])):
+        zgrid = np.linspace(-1, 1, 1024) * max_z_list[i]
+        zgrid_list.append(zgrid)
+        bestfit_az = model_list[i].get_acceleration(zgrid, res_list[i].params)
+        bestfit_az_list.append(bestfit_az)
+    print("fire & optimized oti finished")
+    #MCMC uncertainty
+    accs_mcmc = []
+    for i in range(16):
+        with open(f'vol-{i+1}-mcmc-results.pkl', 'rb') as file:
+            mcmc_states, mcmc_params = pickle.load(file)
+
+        accs = []
+        zgrid = np.linspace(-1, 1, 1024) * max_z_list[i]
+        for p in mcmc_params:
+            acc = model_list[i].get_acceleration(zgrid, p)
+            accs.append(acc.value)
+        a_unit = u.km / u.s / u.Myr
+        accs = accs * acc.unit
+        accs_mcmc.append(accs.to(u.km / (u.Myr * u.s)).value)
+        
+        print(f'Finished processing (Vol. {i+1})')
+
+    #bootstrapping uncertainty
+    accs_boots = []
+    for i in range(16):
+        with open(f'bootstrap_res_v{i+1}.pkl', 'rb') as file:
+            bootstrap_params = pickle.load(file)
+
+        accs = []
+        zgrid = np.linspace(-1, 1, 1024) * max_z_list[i]
+
+        for p in bootstrap_params:
+            acc = model_list[i].get_acceleration(zgrid, p)
+            accs.append(acc.value)
+        
+        accs = np.array(accs) * acc.unit
+        accs_boots.append(accs.to(u.km / (u.Myr * u.s)).value)
+    std_mcmc = [[np.std(accs_mcmc[j][:, i]) for i in range(1024)] for j in range(16)]
+    std_boots = [[np.std(accs_boots[j][:, i]) for i in range(1024)] for j in range(16)]
+    #Combine variances in quadrature to get a total uncertainty
+    std_tot = [np.sqrt(np.array(u.Quantity(std_boots[i]))**2 + np.array(u.Quantity(std_mcmc[i]))**2) for i in range(16)]
+
+    num_plots = len(data_vols['x'])
+    num_cols = 4
+    num_rows = -(-num_plots // num_cols)
+
+    fig, axs = plt.subplots(num_rows, num_cols, figsize=(25, 20), sharex=True, sharey=True)
+    axs = axs.flatten()
+    for ax in axs:
+        for spine in ax.spines.values():
+            spine.set_linewidth(2.5)
+        
+    for i, ax in enumerate(axs):
+        text_box = f"V{i+1}"
+        ax.text(0.9, 0.9, text_box, bbox=dict(facecolor='white', alpha=0.5),
+                horizontalalignment='right', verticalalignment='top', transform=ax.transAxes, fontsize=30)
+
+
+        with open(f'bootstrap_res_v{i+1}.pkl', 'rb') as file:
+            bootstrap_params = pickle.load(file)
+
+        accs = []
+        zgrid = np.linspace(-1, 1, 1024) * max_z_list[i]
+
+
+        for p in bootstrap_params:
+            # Compute acceleration for current parameters
+            acc = model_list[i].get_acceleration(zgrid, p)
+            accs.append(acc.value)
+        
+        accs = np.array(accs) * acc.unit
+        colors = [cmr.infinity(i / 16) for i in range(16)]
+        
+        ll_1sigma = bestfit_az_list[i].to_value(u.km / u.s / u.Myr)-std_tot[i]
+        ul_1sigma = bestfit_az_list[i].to_value(u.km / u.s / u.Myr)+std_tot[i]
+        ll_3sigma = bestfit_az_list[i].to_value(u.km / u.s / u.Myr)-(3*std_tot[i])
+        ul_3sigma = bestfit_az_list[i].to_value(u.km / u.s / u.Myr)+(3*std_tot[i])
+        sigma1_handle = ax.fill_between(zgrid.value, ll_1sigma, ul_1sigma, color=colors[i], alpha=0.5, label=r'1-$\sigma$')
+        sigma3_handle = ax.fill_between(zgrid.value, ll_3sigma, ul_3sigma, color=colors[i], alpha=0.25, label=r'3-$\sigma$')
+        
+        ax.plot(bc[i], (fire_az_binned[i] * u.km/ (u.s * u.Gyr)).to(u.km / (u.Myr * u.s)).value, ls='solid', c='k', lw=2, label=f'FIRE')
+        ax.plot(zgrid_list[i].to_value(u.kpc),
+                bestfit_az_list[i].to_value(u.km / u.s / u.Myr), ls='dotted', c='k', lw=2, label=f'OTI')
+        ax.tick_params(axis='both', which='both', labelsize=30, width=2, length=10)
+        if i == 0:
+            ax.legend(loc='lower left', fontsize=20)  # For the first subplot, show full legend
+        else:
+            # For other subplots, only show the sigma labels in the legend
+            ax.legend(handles=[sigma1_handle, sigma3_handle], labels=[r'1-$\sigma$', r'3-$\sigma$'], loc='lower left', fontsize=20)
+        ax.set_xlim(-1.5, 1.5)
+        ax.set_ylim(-3.5,3.5)
+
+    fig.text(0.55, 0.05, "z [kpc]", ha='center', va='center', fontsize=30)
+    fig.text(0.08, 0.5, f"a$_z$ [{u.km/u.s/u.Myr:latex_inline}]", ha='center', va='center', rotation='vertical', fontsize=30)
+    plt.subplots_adjust(wspace=0.001, hspace=0.001)
+    plt.show()
+
