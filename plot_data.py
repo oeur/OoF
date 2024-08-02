@@ -37,6 +37,7 @@ from jax_cosmo.scipy.interpolate import InterpolatedUnivariateSpline
 import gizmo_analysis as gizmo
 import utilities as ut
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import cmasher as cmr
 from matplotlib.patheffects import withStroke
 import requests
@@ -57,6 +58,8 @@ def generate_surface_mass_density_plot(simdir, simnum, species1, species2, Rcyl,
     snapnum (int): snapshot number (e.g., 600)
     species1 (str): first particle species, i.e.'gas'
     species2 (str): second particle species, i.e. 'star'
+    Rcyl (float): Galactocentric radius (cylindrical) (e.g., 8)
+    numvols (int): number of solar volumes (e.g., 16)
     zcut (float): value of the cut on |z|
     '''
     #gas
@@ -181,6 +184,8 @@ def generate_mean_stellar_motion_plot(simdir, simnum, species, Rcyl, numvols, zc
     simdir (str): filepath to directory where sim is located
     snapnum (int): snapshot number (e.g., 600)
     species (str): 'star', 'gas', 'dark' or 'all'
+    Rcyl (float): Galactocentric radius (cylindrical) (e.g., 8)
+    numvols (int): number of solar volumes (e.g., 16)
     zcut (float): value of the cut on |z|
     '''
     part_star = gizmo.gizmo_io.Read.read_snapshots([species], 'index', simnum, simulation_directory=simdir, assign_hosts_rotation=True, assign_hosts=True)
@@ -268,6 +273,8 @@ def generate_gal_cyl_feh_mgfe_plot(simdir, simnum, species, Rcyl, numvols, zcut)
     simdir (str): filepath to directory where sim is located
     snapnum (int): snapshot number (e.g., 600)
     species (str): 'star', 'gas', 'dark' or 'all'
+    Rcyl (float): Galactocentric radius (cylindrical) (e.g., 8)
+    numvols (int): number of solar volumes (e.g., 16)
     zcut (float): value of the cut on |z|
     '''
     part_star = gizmo.gizmo_io.Read.read_snapshots([species], 'index', simnum, simulation_directory=simdir, assign_hosts_rotation=True, assign_hosts=True)
@@ -353,6 +360,8 @@ def generate_vertical_feh_mgfe_profile_plot(simdir, simnum, species, Rcyl, numvo
     simdir (str): filepath to directory where sim is located
     snapnum (int): snapshot number (e.g., 600)
     species (str): 'star', 'gas', 'dark' or 'all'
+    Rcyl (float): Galactocentric radius (cylindrical) (e.g., 8)
+    numvols (int): number of solar volumes (e.g., 16)
     zcut (float): value of the cut on |z|
     '''
     data_vols = subselect_solar_cyls(simdir, simnum, species, Rcyl, numvols, zcut)
@@ -486,6 +495,8 @@ def generate_azim_avgd_met_grad_plot(simdir, simnum, species, Rcyl, numvols, zcu
     simdir (str): filepath to directory where sim is located
     snapnum (int): snapshot number (e.g., 600)
     species (str): 'star', 'gas', 'dark' or 'all'
+    Rcyl (float): Galactocentric radius (cylindrical) (e.g., 8)
+    numvols (int): number of solar volumes (e.g., 16)
     zcut (float): value of the cut on |z|
     '''
     data_vols = subselect_solar_cyls(simdir, simnum, species, Rcyl, numvols, zcut)
@@ -616,6 +627,8 @@ def generate_data_model_residual_plot(simdir, simnum, species, Rcyl, numvols, zc
     simdir (str): filepath to directory where sim is located
     snapnum (int): snapshot number (e.g., 600)
     species (str): 'star', 'gas', 'dark' or 'all'
+    Rcyl (float): Galactocentric radius (cylindrical) (e.g., 8)
+    numvols (int): number of solar volumes (e.g., 16)
     zcut (float): value of the cut on |z|
     idx (int): index of volume to plot
     '''
@@ -677,6 +690,15 @@ def generate_data_model_residual_plot(simdir, simnum, species, Rcyl, numvols, zc
 
     
 def generate_vertical_acceleration_profiles_plot(simdir, simnum, species, Rcyl, numvols, zcut):
+    '''
+    Generate 16-panel plot of vertical acceleration profiles.
+    simdir (str): filepath to directory where sim is located
+    snapnum (int): snapshot number (e.g., 600)
+    species (str): 'star', 'gas', 'dark' or 'all'
+    Rcyl (float): Galactocentric radius (cylindrical) (e.g., 8)
+    numvols (int): number of solar volumes (e.g., 16)
+    zcut (float): value of the cut on |z|
+    '''
     #https://drive.google.com/drive/folders/1srC6TzRdsJ-gH6cg3HvXUU9weHA5gwX8
     data_vols = subselect_solar_cyls(simdir, simnum, species, Rcyl, numvols, zcut)
     max_z_list = []
@@ -804,3 +826,445 @@ def generate_vertical_acceleration_profiles_plot(simdir, simnum, species, Rcyl, 
     plt.subplots_adjust(wspace=0.001, hspace=0.001)
     plt.show()
 
+def generate_normalized_residuals_plot(simdir, simnum, species, Rcyl, numvols, zcut):
+    '''
+    Generate plot of FIRE - OTI normalized by the total (MCMC + Bootstrapping) uncertainty.
+    simdir (str): filepath to directory where sim is located
+    snapnum (int): snapshot number (e.g., 600)
+    species (str): 'star', 'gas', 'dark' or 'all'
+    Rcyl (float): Galactocentric radius (cylindrical) (e.g., 8)
+    numvols (int): number of solar volumes (e.g., 16)
+    zcut (float): value of the cut on |z|
+    '''
+    #https://drive.google.com/drive/folders/1srC6TzRdsJ-gH6cg3HvXUU9weHA5gwX8
+    data_vols = subselect_solar_cyls(simdir, simnum, species, Rcyl, numvols, zcut)
+    max_z_list = []
+
+    for i in range(len(data_vols['x'])):
+        z_array = data_vols['z'][i] * u.kpc
+        max_z = np.round(3 * 1.5 * MAD(z_array), 1)
+        
+        max_z_list.append(max_z)
+    res_list, bdata_list, model_list = run_oti_analysis(simdir, simnum, species, Rcyl, numvols, zcut)
+    print("res list finished")
+    fire_az_binned = []
+    bc = []
+
+    for i in range(len(data_vols['x'])):
+        # Sort z_vols and accelerations arrays together based on z_vols
+        sorted_indices = sorted(range(len(data_vols['z'][i])), key=lambda k: data_vols['z'][i][k])
+        sorted_z_vols = [data_vols['z'][i][idx] for idx in sorted_indices]
+        sorted_az_vols = [data_vols['az'][i][idx] for idx in sorted_indices]
+        
+        binned_az, bin_edges, _ = stats.binned_statistic(sorted_z_vols, sorted_az_vols, 'mean', bins=np.linspace(-max_z_list[i], max_z_list[i], 101))
+        fire_az_binned.append(binned_az)
+        bin_width = (bin_edges[1] - bin_edges[0])
+        bin_centers = bin_edges[1:] - bin_width/2
+        bc.append(bin_centers)
+
+    zgrid_list = []
+    bestfit_az_list = []
+
+    for i in range(len(data_vols['x'])):
+        zgrid = np.linspace(-1, 1, 1024) * max_z_list[i]
+        zgrid_list.append(zgrid)
+        bestfit_az = model_list[i].get_acceleration(zgrid, res_list[i].params)
+        bestfit_az_list.append(bestfit_az)
+    print("fire & optimized oti finished")
+    #MCMC uncertainty
+    accs_mcmc = []
+    for i in range(16):
+        with open(f'./mcmc/vol-{i+1}-mcmc-results.pkl', 'rb') as file:
+            mcmc_states, mcmc_params = pickle.load(file)
+
+        accs = []
+        zgrid = np.linspace(-1, 1, 1024) * max_z_list[i]
+        for p in mcmc_params:
+            acc = model_list[i].get_acceleration(zgrid, p)
+            accs.append(acc.value)
+        a_unit = u.km / u.s / u.Myr
+        accs = accs * acc.unit
+        accs_mcmc.append(accs.to(u.km / (u.Myr * u.s)).value)
+        
+        print(f'Finished processing (Vol. {i+1})')
+
+    #bootstrapping uncertainty
+    accs_boots = []
+    for i in range(len(data_vols['x'])):
+        with open(f'./boots/bootstrap_res_v{i+1}.pkl', 'rb') as file:
+            bootstrap_params = pickle.load(file)
+
+        accs = []
+        zgrid = np.linspace(-1, 1, 1024) * max_z_list[i]
+
+        for p in bootstrap_params:
+            acc = model_list[i].get_acceleration(zgrid, p)
+            accs.append(acc.value)
+        
+        accs = np.array(accs) * acc.unit
+        accs_boots.append(accs.to(u.km / (u.Myr * u.s)).value)
+    std_mcmc = [[np.std(accs_mcmc[j][:, i]) for i in range(1024)] for j in range(16)]
+    std_boots = [[np.std(accs_boots[j][:, i]) for i in range(1024)] for j in range(16)]
+    #Combine variances in quadrature to get a total uncertainty
+    std_tot = [np.sqrt(np.array(u.Quantity(std_boots[i]))**2 + np.array(u.Quantity(std_mcmc[i]))**2) for i in range(16)]
+
+    def calculate_normalized_residuals(err):        
+        fire_az_binned = []
+        bc = []
+
+        for i in range(len(data_vols['vz'])):
+        # Sort z_vols and accelerations arrays together based on z_vols
+            sorted_indices = sorted(range(len(data_vols['z'][i])), key=lambda k: data_vols['z'][i][k])
+            sorted_z_vols = data_vols['z'][i][sorted_indices]
+            sorted_az_vols = data_vols['az'][i][sorted_indices]
+        
+            binned_az, bin_edges, _ = stats.binned_statistic(sorted_z_vols, sorted_az_vols, 'mean', bins=1024)
+            fire_az_binned.append(binned_az)
+            bin_width = (bin_edges[1] - bin_edges[0])
+            bin_centers = bin_edges[1:] - bin_width/2
+            bc.append(bin_centers)
+            
+        bestfit_az_list = []
+
+        for i in range(len(data_vols['x'])):
+            bestfit_az = model_list[i].get_acceleration((bc[i]*u.kpc), res_list[i].params)
+            bestfit_az_list.append(bestfit_az)
+        
+        residual = [(fire_az_binned[i] * u.km/ (u.s * u.Gyr)).to(u.km / (u.Myr * u.s)) - (bestfit_az_list[i]).to(u.km / (u.Myr * u.s)) for i in range(len(data_vols['x']))]
+        norm_res = np.array(residual)/np.array(err[i])
+        return norm_res
+    
+    zgrid_list = []
+
+    for i in range(len(data_vols['x'])):
+        zgrid = np.linspace(-1, 1, 1024) * max_z_list[i]
+        zgrid_list.append(zgrid)
+
+    stacked_zgrid = [np.stack(zgrid_list[i].to_value(u.kpc)) for i in range(len(data_vols['x']))]
+    #median_zgrid = np.median(np.array(stacked_zgrid), axis=0)
+    mean_zgrid = np.mean(np.array(stacked_zgrid), axis=0)
+    stacked_res = [np.stack(calculate_normalized_residuals(std_tot)[i]) for i in range(len(data_vols['x']))]
+    #median_res = np.median(np.array(stacked_res), axis=0)
+    mean_res = np.mean(np.array(stacked_res), axis=0)
+    #std_res = np.std(np.array(stacked_res), axis=0)
+
+    plt.style.use('default')
+    fig, ax = plt.subplots(figsize=(10,8)) #100 bins instead of 1024
+    colors = [cmr.infinity(i / 16) for i in range(16)]
+    res = calculate_normalized_residuals(std_tot)
+    for i in range(len(data_vols['x'])):
+        ax.plot(
+            zgrid_list[i].to_value(u.kpc),
+            res[i],
+            label=f"V{i+1}",
+            color=colors[i]
+        )
+    mean_line, = ax.plot(mean_zgrid,
+                        mean_res,
+                        linestyle='-',  # Solid line
+                        label='_nolegend_',  # 
+                        color='k', lw=2)
+    legend_handles = [
+        plt.Line2D([], [], color=colors[i % len(colors)], marker='s', linestyle='None', markersize=10, markeredgewidth=5, label=f'V{i+1}')
+        for i in range(len(data_vols['x']))
+    ]
+    legend_handles.append(plt.Line2D([], [], color='k', marker='s', linestyle='None', markersize=10, markeredgewidth=5, label='Mean'))
+    ax.legend(handles=legend_handles, ncol=6, loc='lower center', prop={'size': 14})
+
+    plt.axvline(0, -20, 20, c='k', ls='--', lw=2, alpha=0.25)
+    plt.xlim(-1.5,1.5)
+    plt.ylim(-12,12)
+    plt.tick_params(axis='both', which='major', labelsize=25, width=2, length=10)
+    plt.xlabel("z [kpc]", fontsize=25)
+    plt.ylabel(r"(FIRE - OTI) / $\sigma_{MCMC+boostrapping}$", fontsize=25, labelpad=-1.5)
+    plt.tight_layout()
+    plt.show()
+
+def generate_stellar_smd_plot(simdir, simnum, species, Rcyl, numvols, zcut):
+    '''
+    Generate plot of true FIRE & OTI-inferred stellar surface mass density at |z|=1.1 kpc.
+    simdir (str): filepath to directory where sim is located
+    snapnum (int): snapshot number (e.g., 600)
+    species (str): 'star', 'gas', 'dark' or 'all'
+    Rcyl (float): Galactocentric radius (cylindrical) (e.g., 8)
+    numvols (int): number of solar volumes (e.g., 16)
+    zcut (float): value of the cut on |z|
+    '''
+    data_vols = subselect_solar_cyls(simdir, simnum, species, Rcyl, numvols, zcut)
+    part_star = gizmo.gizmo_io.Read.read_snapshots([species], 'index', simnum, simulation_directory=simdir, assign_hosts_rotation=True, assign_hosts=True)
+    x  = part_star[species].prop('host.distance.principal.cartesian')[:,0]
+    y  = part_star[species].prop('host.distance.principal.cartesian')[:,1]
+    z  = part_star[species].prop('host.distance.principal.cartesian')[:,2]
+    age  = part_star[species].prop('age')
+    feh  = part_star[species].prop('metallicity.fe')
+    mgfe = part_star[species].prop('metallicity.mg - metallicity.fe')
+    max_z_list = []
+
+    for i in range(len(data_vols['x'])):
+        z_array = data_vols['z'][i] * u.kpc
+        max_z = np.round(3 * 1.5 * MAD(z_array), 1)
+        
+        max_z_list.append(max_z)
+    res_list, bdata_list, model_list = run_oti_analysis(simdir, simnum, species, Rcyl, numvols, zcut)
+    #MCMC uncertainty
+    accs_mcmc = []
+    for i in range(16):
+        with open(f'./mcmc/vol-{i+1}-mcmc-results.pkl', 'rb') as file:
+            mcmc_states, mcmc_params = pickle.load(file)
+
+        accs = []
+        zgrid = np.linspace(-1, 1, 1024) * max_z_list[i]
+        for p in mcmc_params:
+            acc = model_list[i].get_acceleration(zgrid, p)
+            accs.append(acc.value)
+        a_unit = u.km / u.s / u.Myr
+        accs = accs * acc.unit
+        accs_mcmc.append(accs.to(u.km / (u.Myr * u.s)).value)
+        
+        print(f'Finished processing (Vol. {i+1})')
+
+    #bootstrapping uncertainty
+    accs_boots = []
+    for i in range(len(data_vols['x'])):
+        with open(f'./boots/bootstrap_res_v{i+1}.pkl', 'rb') as file:
+            bootstrap_params = pickle.load(file)
+
+        accs = []
+        zgrid = np.linspace(-1, 1, 1024) * max_z_list[i]
+
+        for p in bootstrap_params:
+            acc = model_list[i].get_acceleration(zgrid, p)
+            accs.append(acc.value)
+        
+        accs = np.array(accs) * acc.unit
+        accs_boots.append(accs.to(u.km / (u.Myr * u.s)).value)
+    std_mcmc = [[np.std(accs_mcmc[j][:, i]) for i in range(1024)] for j in range(16)]
+    std_boots = [[np.std(accs_boots[j][:, i]) for i in range(1024)] for j in range(16)]
+    #Combine variances in quadrature to get a total uncertainty
+    std_tot = [np.sqrt(np.array(u.Quantity(std_boots[i]))**2 + np.array(u.Quantity(std_mcmc[i]))**2) for i in range(16)]
+
+    fire_az_binned = []
+    bc = []
+
+    for i in range(len(data_vols['vz'])):
+    # Sort z_vols and accelerations arrays together based on z_vols
+        sorted_indices = sorted(range(len(data_vols['z'][i])), key=lambda k: data_vols['z'][i][k])
+        sorted_z_vols = [data_vols['z'][i][idx] for idx in sorted_indices]
+        sorted_az_vols = [data_vols['az'][i][idx] for idx in sorted_indices]
+        
+        binned_az, bin_edges, binnumber = stats.binned_statistic(sorted_z_vols, sorted_az_vols, 'mean', bins=1024)
+        fire_az_binned.append(binned_az)
+        bin_width = (bin_edges[1] - bin_edges[0])
+        bin_centers = bin_edges[1:] - bin_width/2
+        bc.append(bin_centers)
+
+    bestfit_az_list_bc = []
+
+    for i in range(len(data_vols['x'])):
+        bestfit_az = model_list[i].get_acceleration((bc[i]*u.kpc), res_list[i].params)
+        bestfit_az_list_bc.append(bestfit_az)
+        
+    fire_az = (np.array(fire_az_binned) * u.km/ (u.s * u.Gyr)).to(u.km / (u.Myr * u.s))
+    oti_arr = np.array(bestfit_az_list_bc)
+    oti_az = (oti_arr* u.kpc/ (u.Myr)**2).to(u.km / (u.Myr * u.s))
+    oti_az_in_pc = (oti_az.to(u.pc / (u.s)**2))
+    fire_az_in_pc = (fire_az.to(u.pc / (u.s)**2))
+
+    def compute_smd(a):
+        G_in_pc = G.to(u.pc * (u.pc)**2 / (u.Msun * (u.s)**2))
+        surface_mass_density = np.abs(a)/(2*np.pi*G_in_pc)
+        return surface_mass_density
+
+    fire_stellar_sigma = compute_smd(fire_az_in_pc)
+    oti_stellar_sigma = compute_smd(oti_az_in_pc)
+    std_in_pc = (std_tot*u.km / (u.Myr * u.s)).to(u.pc / (u.s)**2)
+
+    def find_closest_index(array, value):
+        array = np.asarray(array)
+        index = (np.abs(array - value)).argmin()
+        return index
+
+    idx_above = [find_closest_index(bc[i], 1.1) for i in range(16)]
+    idx_below = [find_closest_index(bc[i], -1.1) for i in range(16)]
+
+    def compute_smd_oti_err(std):
+        G_in_pc = G.to(u.pc * (u.pc)**2 / (u.Msun * (u.s)**2))
+        smd_std = np.abs(std)/(2*np.pi*G_in_pc)
+        return smd_std
+
+    oti_sigma_std= compute_smd_oti_err(std_in_pc)
+
+    fire_sigma_above = []
+    oti_sigma_above = []
+    sigma_std_above = []
+    for i in range(len(data_vols['x'])):
+        fire_sig = fire_stellar_sigma[i][idx_above[i]]
+        oti_sig = oti_stellar_sigma[i][idx_above[i]]
+        oti_sig_std = oti_sigma_std[i][idx_above[i]]
+        fire_sigma_above.append(fire_sig)
+        oti_sigma_above.append(oti_sig)
+        sigma_std_above.append(oti_sig_std)
+        
+    fire_sigma_below = []
+    oti_sigma_below = []
+    sigma_std_below = []
+    for i in range(len(data_vols['x'])):
+        fire_sig = fire_stellar_sigma[i][idx_below[i]]
+        oti_sig = oti_stellar_sigma[i][idx_below[i]]
+        oti_sig_std = oti_sigma_std[i][idx_below[i]]
+        fire_sigma_below.append(fire_sig)
+        oti_sigma_below.append(oti_sig)
+        sigma_std_below.append(oti_sig_std)
+    disk_indices = np.where((np.abs(x) < 15) & (np.abs(y) < 15) & (np.abs(z) < 1.5) & (age <= 2.5))
+    x_masked     = x[disk_indices]
+    y_masked     = y[disk_indices]
+    feh_masked    = feh[disk_indices]
+    num_bins_x = 300
+    num_bins_y = 300
+    #plotting
+    legend_keys = ['V1', 'V2', 'V3', 'V4', 'V5', 'V6', 'V7', 'V8', 'V9', 'V10', 'V11', 'V12', 'V13', 'V14', 'V15', 'V16']
+    colors = [cmr.infinity(i / 16) for i in range(16)]
+
+    fig, ax = plt.subplots(figsize=[25, 8]) 
+    axins = inset_axes(ax, width=3, height=3)
+
+
+    # Plot FIRE above data
+    for idx, value in enumerate(fire_sigma_above):
+        ax.scatter(idx + 0.12, value, color=colors[idx], marker='*', s=300, facecolors=colors[idx], edgecolors=colors[idx], linewidth=2)
+
+    # Plot OTI above data
+    for idx, value in enumerate(oti_sigma_above):
+        ax.errorbar(idx + 0.12, value, yerr=sigma_std_above[idx], fmt='o', ecolor=colors[idx], capsize=5, label=r'1-$\sigma$', marker='', linewidth=4, zorder=1)
+        ax.errorbar(idx + 0.12, value, yerr=3 * sigma_std_above[idx], fmt='o', ecolor=colors[idx], capsize=5, label=r'3-$\sigma$', marker='', linewidth=2, alpha=0.5, zorder=2)
+        ax.scatter(idx + 0.12, value, color=colors[idx], marker='o', s=200, facecolors=colors[idx], edgecolors=colors[idx], linewidth=2, zorder=10)
+
+    # Plot FIRE below data
+    for idx, value in enumerate(fire_sigma_below):
+        ax.scatter(idx - 0.12, value, color=colors[idx], marker='^', s=300, facecolors='white', edgecolors=colors[idx], linewidth=2)
+    # Plot OTI below data
+    for idx, value in enumerate(oti_sigma_below):
+        ax.errorbar(idx - 0.12, value, yerr=sigma_std_below[idx], fmt='o', ecolor=colors[idx], capsize=5, label=r'1-$\sigma$', marker='', linewidth=4, zorder=3)
+        ax.errorbar(idx - 0.12, value, yerr=3 * sigma_std_below[idx], fmt='o', ecolor=colors[idx], capsize=5, label=r'3-$\sigma$', marker='', linewidth=2, alpha=0.5, zorder=4)
+        ax.scatter(idx - 0.12, value, color=colors[idx], marker='d', s=200, facecolors='white', edgecolors=colors[idx], linewidth=2, zorder=7)
+    ax.set_xticks(range(16))
+    ax.set_xticklabels(['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16'])
+
+    legend_elements = [plt.Line2D([0], [0], marker='*', color='w', label=key, markersize=10, markerfacecolor=color) 
+                    for key, color in zip(legend_keys, colors)]
+
+    marker_legend_elements = [
+        plt.Line2D([0], [0], marker='*', color='w', label='FIRE above', 
+                markersize=15, markerfacecolor='white', markeredgecolor='black'),
+        plt.Line2D([0], [0], marker='o', color='w', label='OTI above', 
+                markersize=10, markerfacecolor='white', markeredgecolor='black'),
+        plt.Line2D([0], [0], marker='^', color='w', label='FIRE below', 
+                markersize=15, markerfacecolor='white', markeredgecolor='black'),
+        plt.Line2D([0], [0], marker='d', color='w', label='OTI below', 
+                markersize=10, markerfacecolor='white', markeredgecolor='black'),
+        plt.Line2D([0], [0], color='k', linewidth=4, label='1-$\sigma$', linestyle='-'),
+        plt.Line2D([0], [0], color='k', linewidth=2, label='3-$\sigma$', linestyle='-', alpha=0.5)]
+
+    all_handles = legend_elements + marker_legend_elements
+    ax.legend(handles=marker_legend_elements, loc='upper left', fontsize=25)
+    ax.set_xlabel('Solar Volumes', fontsize=25)
+    ax.set_ylabel(r'$\Sigma_{\odot}$($|$z$|$=1.1 kpc) [M$_{\odot} \ $pc$^{-2}$]', fontsize=25)
+    plt.tick_params(axis='both', which='major', labelsize=20, width=2, length=10)
+
+    mean_feh, xe, ye, bn = scipy.stats.binned_statistic_2d(x_masked, y_masked, feh_masked, statistic='mean', range=[[-15, 15], [-15, 15]], bins=[num_bins_x,num_bins_y])
+    cs = axins.pcolormesh(xe, ye, mean_feh.T, cmap=cmr.neutral, vmin=-0.5, vmax=0.3, alpha=0.25)
+    angles = np.linspace(0, 360, 16, endpoint=False)
+    theta = np.radians(angles)
+
+    x_ = np.cos(theta)*8
+    y_ = np.sin(theta)*8
+    for i in range(len(data_vols['x'])):
+        center_x = float(x_[i])
+        center_y = float(y_[i])
+        circle = mpatches.Circle((center_x, center_y), radius=np.sqrt(2.4), edgecolor=colors[i], fill=False, linewidth=3.0)
+        underlay = mpatches.Circle((center_x, center_y), radius=np.sqrt(2.4), edgecolor=colors[i], fill=False, linewidth=4.5)
+        axins.add_patch(underlay)
+        axins.add_patch(circle)
+        text = axins.text(center_x, center_y, f'{i + 1}', ha='center', va='center', color='white', fontsize=15, fontdict={'weight': 'bold'})
+        text.set_path_effects([withStroke(linewidth=3, foreground='k')])
+    axins.set_xlim(-10, 10)
+    axins.set_ylim(-10, 10)
+    axins.tick_params(labelleft=False, labelbottom=False)
+    plt.tight_layout()
+    plt.show()
+
+def generate_metallicity_gradient_plot(simdir, simnum, species, Rcyl, numvols, zcut, ear, ear_cb, minval, maxval):
+    '''
+    Generate 16-panel plot of true FIRE vertical metallicity gradients.
+    simdir (str): filepath to directory where sim is located
+    snapnum (int): snapshot number (e.g., 600)
+    species (str): 'star', 'gas', 'dark' or 'all'
+    Rcyl (float): Galactocentric radius (cylindrical) (e.g., 8)
+    numvols (int): number of solar volumes (e.g., 16)
+    ear (str): element abundance ratio (e.g., 'feh' or 'mgfe')
+    ear_cb (str): cb label for element abundance ratio (e.g., 'Fe/H' or 'Mg/Fe')
+    minval (float): minimum colorbar value (maps to metallicity)
+    maxval (float): maximum colorbar value (maps to metallicity)
+    zcut (float): value of the cut on |z|
+    '''
+    data_vols = subselect_solar_cyls(simdir, simnum, species, Rcyl, numvols, zcut)
+    bdata_list = []
+
+    for i in range(len(data_vols['x'])):
+        z_array = data_vols['z'][i] * u.kpc
+        vz_array = data_vols['vz'][i] * (u.km / u.s)
+        
+        max_z = np.round(3 * 1.5 * MAD(z_array), 1)
+        max_vz = np.round(3 * 1.5 * MAD(vz_array), 0)
+        
+        zvz_bins = {
+            "pos": np.linspace(-max_z, max_z, 101),
+            "vel": np.linspace(-max_vz, max_vz, 101),
+        }
+        
+        bdata = oti.data.get_binned_label(
+            z_array,
+            vz_array,
+            label=data_vols[ear][i],
+            bins=zvz_bins,
+            units=galactic,
+            s_N_thresh=32,
+        )
+        bdata_list.append(bdata)
+
+    num_plots = len(data_vols['x'])
+    num_cols = 4
+    num_rows = -(-num_plots // num_cols)
+
+    fig, axs = plt.subplots(num_rows, num_cols, figsize=(25, 20), sharex=True, sharey=True)
+    axs = axs.flatten()
+    cax = fig.add_axes([0.9, 0.11, 0.02, 0.77]) 
+    for ax in axs:
+        for spine in ax.spines.values():
+            spine.set_linewidth(2.5)
+        
+    for i in range(num_plots):
+        cs = axs[i].pcolormesh(
+            bdata_list[i]["vel"].to_value(u.km/u.s),
+            bdata_list[i]["pos"].to_value(u.kpc),
+            bdata_list[i]["label"],
+            vmin=minval, #0.15 for MgFe, -1.2 for FeH
+            vmax=maxval, #0.35 for MgFe, 0.1 for FeH
+            cmap='magma'
+            )
+        text_box = f"V{i+1}"
+        axs[i].text(0.9, 0.9, text_box, bbox=dict(facecolor='white', alpha=1),
+                horizontalalignment='right', verticalalignment='top', transform=axs[i].transAxes, fontsize=30)
+        axs[i].tick_params(axis='both', which='both', labelsize=30)
+        axs[i].set_ylim(-3.5,3.5)
+        axs[i].set_xlim(-150,150)
+
+    fig.colorbar(cs, cax=cax)
+    cax.tick_params(axis='y', labelsize=30) 
+    cax.set_ylabel(fr"$\langle$[{ear_cb}]$\rangle$ [dex]", fontsize=30, rotation=270, labelpad=30)
+    fig.text(0.55, 0.05, f"$v_z$ [{u.km/u.s:latex_inline}]", ha='center', va='center', fontsize=30)
+    fig.text(0.065, 0.5, f"$z$ [{u.kpc:latex_inline}]", ha='center', va='center', rotation='vertical', fontsize=30)
+    plt.subplots_adjust(wspace=0.001, hspace=0.001)
+    plt.subplots_adjust(right=0.87) 
+    plt.tight_layout()
+    plt.show()
