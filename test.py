@@ -12,6 +12,7 @@ from plot_data import generate_vertical_acceleration_profiles_plot
 from plot_data import generate_normalized_residuals_plot
 from plot_data import generate_stellar_smd_plot
 from plot_data import generate_metallicity_gradient_plot
+from plot_data import generate_stargasdm_rho_plot
 simpath = '/Users/micahoeur/Dropbox/Research/Sarah/FIRE2_m12i_metal_diffusion/output_with_accel'
 snum = 600
 spcs = 'star'
@@ -39,8 +40,10 @@ spcs = 'star'
 #print("generate_vertical_acceleration_profiles_plot ran successfully")
 #generate_normalized_residuals_plot(simpath, snum, spcs, 8, 16, 10)
 #print("generate_normalized_residuals_plot ran successfully")
-generate_stellar_smd_plot(simpath, snum, spcs, 8, 16, 10)
-print("generate_stellar_smd_plot ran successfully")
-generate_metallicity_gradient_plot(simpath, snum, spcs, 8, 16, 10, 'feh', 'Fe/H', -1.2, 0.1)
-print("generate_metallicity_gradient_plot ran successfully")
+#generate_stellar_smd_plot(simpath, snum, spcs, 8, 16, 10)
+#print("generate_stellar_smd_plot ran successfully")
+#generate_metallicity_gradient_plot(simpath, snum, spcs, 8, 16, 10, 'feh', 'Fe/H', -1.2, 0.1)
+#print("generate_metallicity_gradient_plot ran successfully")
+generate_stargasdm_rho_plot(simpath, snum, spcs, 8, 16, 5)
+print("generate_stargasdm_rho_plot ran successfully")
 #print("all functions ran successfully")

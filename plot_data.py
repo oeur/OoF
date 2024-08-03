@@ -1268,3 +1268,191 @@ def generate_metallicity_gradient_plot(simdir, simnum, species, Rcyl, numvols, z
     plt.subplots_adjust(right=0.87) 
     plt.tight_layout()
     plt.show()
+
+def generate_stargasdm_rho_plot(simdir, simnum, species, Rcyl, numvols, zcut): #use zcut=5
+    '''
+    Generate a 16-panel plot of true FIRE star, gas, dark matter, and total vertical volume density profiles. 
+    simdir (str): filepath to directory where sim is located
+    snapnum (int): snapshot number (e.g., 600)
+    species (str): 'star', 'gas', 'dark' or 'all'
+    Rcyl (float): Galactocentric radius (cylindrical) (e.g., 8)
+    numvols (int): number of solar volumes (e.g., 16)
+    zcut (float): value of the cut on |z|, (e.g., 5)
+    '''
+    part = gizmo.gizmo_io.Read.read_snapshots([species], 'index', simnum, simulation_directory=simdir, assign_hosts_rotation=True, assign_hosts=True)
+    Rxy_s     = part['star'].prop('host.distance.principal.cylindrical')[:,0]
+    z_s       = part['star'].prop('host.distance.principal.cylindrical')[:,2]
+    mass_s    = part['star'].prop('mass')
+    x_s       = part['star'].prop('host.distance.principal.cartesian')[:,0]
+    y_s       = part['star'].prop('host.distance.principal.cartesian')[:,1]
+    z_star    = part['star'].prop('host.distance.principal.cartesian')[:,2]
+    Phixy_s   = part['star'].prop('host.distance.principal.cylindrical')[:,1]
+
+    Rxy_g     = part['gas'].prop('host.distance.principal.cylindrical')[:,0]
+    z_g       = part['gas'].prop('host.distance.principal.cylindrical')[:,2]
+    mass_g    = part['gas'].prop('mass')
+    x_g       = part['gas'].prop('host.distance.principal.cartesian')[:,0]
+    y_g       = part['gas'].prop('host.distance.principal.cartesian')[:,1]
+    z_gas     = part['gas'].prop('host.distance.principal.cartesian')[:,2]
+    Phixy_g   = part['gas'].prop('host.distance.principal.cylindrical')[:,1]
+
+    Rxy_dm    = part['dark'].prop('host.distance.principal.cylindrical')[:,0]
+    z_dm      = part['dark'].prop('host.distance.principal.cylindrical')[:,2]
+    mass_dm   = part['dark'].prop('mass')
+    x_dm      = part['dark'].prop('host.distance.principal.cartesian')[:,0]
+    y_dm      = part['dark'].prop('host.distance.principal.cartesian')[:,1]
+    z_dark    = part['dark'].prop('host.distance.principal.cartesian')[:,2]
+    Phixy_dm  = part['dark'].prop('host.distance.principal.cylindrical')[:,1]
+    #Select for -5<z/kpc<5 & 0<= R/kpc<= 20 
+    inds       = np.where((np.abs(Rxy_s) <= 20)   & (np.abs(z_s) <= zcut))
+    indg       = np.where((np.abs(Rxy_g) <= 20)   &(np.abs(z_g) <= zcut))
+    inddm      = np.where((np.abs(Rxy_dm) <= 20)  &(np.abs(z_dm) <= zcut))
+
+    Rs_in      = Rxy_s[inds]
+    zs_in      = z_s[inds]
+    abzs_in    = np.abs(zs_in)
+    ms_in      = mass_s[inds]
+    x_s_in     = x_s[inds]
+    y_s_in     = y_s[inds]
+    z_star_in  = z_star[inds] #cartesian z has star in name
+    Phixy_s_in = Phixy_s[inds]
+
+    Rg_in      = Rxy_g[indg]
+    zg_in      = z_g[indg]
+    abzg_in    = np.abs(zg_in)
+    mg_in      = mass_g[indg]
+    x_g_in     = x_g[indg]
+    y_g_in     = y_g[indg]
+    z_gas_in  = z_gas[indg]
+    Phixy_g_in = Phixy_g[indg]
+
+
+    Rdm_in     = Rxy_dm[inddm]
+    zdm_in     = z_dm[inddm]
+    abzdm_in   = np.abs(zdm_in)
+    mdm_in     = mass_dm[inddm]
+    x_dm_in     = x_dm[inddm]
+    y_dm_in     = y_dm[inddm]
+    z_dark_in  = z_dark[inddm]
+    Phixy_dm_in = Phixy_dm[inddm]
+    angles = np.linspace(0, 360, numvols, endpoint=False)
+    theta = np.radians(angles)
+
+    x_ = np.cos(theta)*Rcyl
+    y_ = np.sin(theta)*Rcyl
+    stellar_volumes    = []
+    gaseous_volumes    = []
+    darkmatter_volumes = []
+
+    for i in range(len(x_)):
+        star = np.where((((x_s_in - float(x_[i])) ** 2 + (y_s_in - float(y_[i])) ** 2 ) < 2))
+        gas = np.where((((x_g_in - float(x_[i])) ** 2 + (y_g_in - float(y_[i])) ** 2 ) < 2))
+        dark = np.where((((x_dm_in - float(x_[i])) ** 2 + (y_dm_in - float(y_[i])) ** 2 ) < 2))
+        stellar_volumes.append(star)
+        gaseous_volumes.append(gas)
+        darkmatter_volumes.append(dark)
+
+    colors_ = [cmr.infinity(i / 16) for i in range(16)]
+    star_keys = ['Rs_in', 'ms_in', 'zs_in', 'Phixy_s_in']
+    gas_keys = ['Rg_in', 'mg_in', 'zg_in', 'Phixy_g_in']
+    dark_keys = ['Rdm_in', 'mdm_in', 'zdm_in', 'Phixy_dm_in']
+
+    star_vols = {key: [] for key in star_keys}
+    gas_vols = {key: [] for key in gas_keys}
+    dark_vols = {key: [] for key in dark_keys}
+
+    for keep in stellar_volumes:
+        for key in star_keys:
+            star_vols[key].append(locals()[key][keep])
+            
+    for keep in gaseous_volumes:
+        for key in gas_keys:
+            gas_vols[key].append(locals()[key][keep])
+            
+    for keep in darkmatter_volumes:
+        for key in dark_keys:
+            dark_vols[key].append(locals()[key][keep])
+    def find_closest_index(arr, target):
+        idx = (np.abs(arr - target)).argmin()
+        return idx
+    bn=30
+    ms, xes, yes, bns = stats.binned_statistic_2d(
+        star_vols['Rs_in'][0], star_vols['zs_in'][0], star_vols['ms_in'][0], 
+        bins=bn, range=[[6.59, 9.41], [-5, 5]], statistic='sum'
+    )
+    mg, xeg, yeg, bng = stats.binned_statistic_2d(
+        gas_vols['Rg_in'][0], gas_vols['zg_in'][0], gas_vols['mg_in'][0], 
+        bins=bn, range=[[6.59, 9.41], [-5, 5]], statistic='sum'
+    )
+    mdm, xedm, yedm, bndm = stats.binned_statistic_2d(
+        dark_vols['Rdm_in'][0], dark_vols['zdm_in'][0], dark_vols['mdm_in'][0], 
+        bins=bn, range=[[6.59, 9.41], [-5, 5]], statistic='sum'
+    )
+
+    rbinmids = (xes[:-1] + xes[1:])/2
+    rbinsize = xes[1:] - xes[:-1]
+    zbinsize = yes[1:] - yes[:-1]
+    zbinmids = (yes[:-1] + yes[1:])/2
+    rbinmids = rbinmids[:, np.newaxis, np.newaxis]
+    rbinsize = rbinsize[:, np.newaxis, np.newaxis]
+    zbinsize = zbinsize[np.newaxis, :, np.newaxis]
+    target_value = 8
+    idx = find_closest_index(rbinmids, target_value)
+
+    bn=30
+    stellar_density  = []
+    gas_density = []
+    dark_density = []
+    total_density = []
+    zbinmiddles = []
+
+    for i in range(len(x_)):
+        ms, xes, yes, bns = stats.binned_statistic_2d(star_vols['Rs_in'][i], star_vols['zs_in'][i], star_vols['ms_in'][i], bins=bn, range=[[6.59, 9.41], [-5, 5]], statistic='sum')
+        mg, xeg, yeg, bng = stats.binned_statistic_2d(gas_vols['Rg_in'][i], gas_vols['zg_in'][i], gas_vols['mg_in'][i], bins=bn, range=[[6.59, 9.41], [-5, 5]], statistic='sum')
+        mdm, xedm, yedm, bndm = stats.binned_statistic_2d(dark_vols['Rdm_in'][i], dark_vols['zdm_in'][i], dark_vols['mdm_in'][i], bins=bn, range=[[6.59, 9.41], [-5, 5]], statistic='sum')
+        rbinmids = (xes[:-1] + xes[1:])/2
+        rbinsize = xes[1:] - xes[:-1]
+        zbinsize = yes[1:] - yes[:-1]
+        zbinmids = (yes[:-1] + yes[1:])/2
+        theta_size = theta[1] - theta[0]
+        zbinmiddles.append(zbinmids)
+        dV = rbinmids*rbinsize*zbinsize*theta_size
+        s = ms.T/dV
+        g = mg.T/dV
+        d = mdm.T/dV
+        tot = s + g + d
+        stellar_density.append(s)
+        gas_density.append(g)
+        dark_density.append(d)
+        total_density.append(tot)
+    #plotting - up 2 no good
+    num_plots = len(stellar_volumes)
+    num_cols = 4
+    num_rows = -(-num_plots // num_cols)
+
+    fig, axs = plt.subplots(num_rows, num_cols, figsize=(25, 20), sharex=True, sharey=False)
+    axs = axs.flatten()
+    for ax in axs:
+        for spine in ax.spines.values():
+            spine.set_linewidth(2.5)
+    for i, ax in enumerate(axs):
+        text_box = f"V{i+1}"
+        ax.text(0.96, 0.96, text_box, bbox=dict(facecolor='white', alpha=1),
+                horizontalalignment='right', verticalalignment='top', transform=axs[i].transAxes, fontsize=25)
+        ax.plot(zbinmiddles[i], stellar_density[i][:,idx], c=colors_[i], linewidth=3, label='star')
+        ax.plot(zbinmiddles[i], gas_density[i][:,idx], c=colors_[i], ls='--', linewidth=3, label='gas')
+        ax.plot(zbinmiddles[i], dark_density[i][:,idx], c=colors_[i], ls='dotted', linewidth=3, label='dark')
+        ax.plot(zbinmiddles[i], total_density[i][:,idx], c='k', ls='-', linewidth=3, label='total')
+        ax.axvline(0, 0, 1e12, ls='--', c='k', alpha=0.15, linewidth=2.5)
+    for i in [0, 4, 8, 12]:
+        axs[i].set_ylabel(r'$\rho$ [M$_{\odot}$ kpc$^{-3}$]', fontsize=30)
+    for i in [0]:
+        axs[i].legend(ncol=1, loc='upper left', fontsize=19)
+        
+    for i in [12, 13, 14, 15]:
+        axs[i].set_xlabel('z [kpc]', fontsize=30)
+        
+    plt.xlim(-1.5,1.5)
+    plt.tight_layout()
+    plt.show()
+    
