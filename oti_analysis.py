@@ -132,7 +132,7 @@ def run_oti_analysis(simdir, simnum, species, Rcyl, numvols, zcut):
         res = model_list[i].optimize(init_params_list[i], objective="gaussian", bounds=bounds_list[i], **data_kw_list[i])
         res_list.append(res)
 
-    return res_list, bdata_list, model_list
+    return res_list, bdata_list, model_list, bounds_list
 
 def plot_oti_results(simdir, simnum, species, Rcyl, numvols, zcut, idx):
     res_list, bdata_list, model_list = run_oti_analysis(simdir, simnum, species, Rcyl, numvols, zcut)
