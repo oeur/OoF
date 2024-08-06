@@ -147,7 +147,7 @@ def generate_surface_mass_density_plot(simdir, simnum, species1, species2, Rcyl,
     axs[0].quiver(0, 0, V[0], V[1], angles='xy', scale_units='xy', scale=1, color='k')
     vec_label = axs[0].text(0, 0.75, r'R$_{\mathrm{cyl}}$ = 8 kpc', color='white', alpha=1, fontsize= 13, fontdict={'weight': 'bold'})  
     vec_label.set_path_effects([withStroke(linewidth=3, foreground='k')])
-    axs[0].legend(handles=legend_handles, labels=[fr'N$_*$={len(data_vols["z"][i])}' for i in range(len(data_vols['x']))], ncol=4, loc='upper center', framealpha=0.9)
+    axs[0].legend(handles=legend_handles, labels=[fr'N$_*$={len(data_vols["z"][i])}' for i in range(len(data_vols['x']))], ncol=4, loc='upper center', framealpha=0.9, prop={'size': 10} )
     axs[0].set_xlabel('x [kpc]', fontsize=20)
     axs[0].set_ylabel('y [kpc]', fontsize=20)
     axs[0].tick_params(axis='both', which='major', labelsize=20)
@@ -178,6 +178,7 @@ def generate_surface_mass_density_plot(simdir, simnum, species1, species2, Rcyl,
     plt.gca().set_aspect('equal')
     plt.subplots_adjust(wspace=-0.25)
     plt.tight_layout()
+    plt.savefig(f'm12b_surface_mass_density', bbox_inches='tight')
     plt.show()
 
 def generate_mean_stellar_motion_plot(simdir, simnum, species, Rcyl, numvols, zcut): #use zcut=1.5
@@ -269,9 +270,10 @@ def generate_mean_stellar_motion_plot(simdir, simnum, species, Rcyl, numvols, zc
     ax.set_ylabel('y [kpc]', fontsize=25)  
     plt.subplots_adjust(hspace=0.05)
     plt.tight_layout()
+    plt.savefig(f'm12b_mean_stellar_motion', bbox_inches='tight')
     plt.show()
 
-def generate_gal_cyl_feh_mgfe_plot(simdir, simnum, species, Rcyl, numvols, zcut): #use zcut=1.5
+def generate_gal_cyl_feh_mgfe_plot(simdir, simnum, species, Rcyl, numvols, zcut,  minval_mgfe, maxval_mgfe, minval_feh, maxval_feh): #use zcut=1.5
     '''
     Generate 2-panel plot of mean [Fe/H] and [Mg/Fe] in the Galactic cylinder.
 
@@ -282,6 +284,10 @@ def generate_gal_cyl_feh_mgfe_plot(simdir, simnum, species, Rcyl, numvols, zcut)
         Rcyl (float): Galactocentric radius (cylindrical) (e.g., 8)
         numvols (int): number of solar volumes (e.g., 16)
         zcut (float): value of the cut on |z|
+        minval_mgfe (float): minimum value for [Mg/Fe] colorbar
+        maxval_mgfe (float): maximum value for [Mg/Fe] colorbar
+        minval_feh (float): minimum value for [Fe/H] colorbar
+        maxval_feh (float): maximum value for [Fe/H] colorbar
     '''
     part_star = gizmo.gizmo_io.Read.read_snapshots([species], 'index', simnum, simulation_directory=simdir, assign_hosts_rotation=True, assign_hosts=True)
     x  = part_star[species].prop('host.distance.principal.cartesian')[:,0]
@@ -314,7 +320,7 @@ def generate_gal_cyl_feh_mgfe_plot(simdir, simnum, species, Rcyl, numvols, zcut)
     num_bins_x = 300
     num_bins_y = 300
     mean_mgfe, xe, ye, bn = scipy.stats.binned_statistic_2d(x_masked, y_masked, mgfe_masked, statistic='mean', range=[[-15, 15], [-15, 15]], bins=[num_bins_x,num_bins_y])
-    cs = ax.pcolormesh(xe, ye, mean_mgfe.T, cmap='RdBu_r', vmin=0.14, vmax=0.3) #0.22 to 0.28
+    cs = ax.pcolormesh(xe, ye, mean_mgfe.T, cmap='RdBu_r', vmin=minval_mgfe, vmax=maxval_mgfe) #0.22 to 0.28; most recent range 0.14 to 0.3
     cbar = fig.colorbar(cs, ax=ax)
     cbar.set_label(r"$\langle$[Mg/Fe]$\rangle$ [dex]", fontsize=25, rotation=270, labelpad=30)
     cbar.ax.tick_params(labelsize=25)
@@ -336,7 +342,7 @@ def generate_gal_cyl_feh_mgfe_plot(simdir, simnum, species, Rcyl, numvols, zcut)
     # FeH
     ax = axs[0]
     mean_feh, xe, ye, bn = scipy.stats.binned_statistic_2d(x_masked, y_masked, feh_masked, statistic='mean', range=[[-15, 15], [-15, 15]], bins=[num_bins_x,num_bins_y])
-    cs = ax.pcolormesh(xe, ye, mean_feh.T, cmap='RdBu_r', vmin=-0.5, vmax=0.3) #10.9 to 0.0
+    cs = ax.pcolormesh(xe, ye, mean_feh.T, cmap='RdBu_r', vmin=minval_feh, vmax=maxval_feh) #10.9 to 0.0; most recent range -0.5, 0.3
     cbar = fig.colorbar(cs, ax=ax)
     cbar.set_label(r"$\langle$[Fe/H]$\rangle$ [dex]", fontsize=25, rotation=270, labelpad=30)    
     cbar.ax.tick_params(labelsize=25)
@@ -358,6 +364,7 @@ def generate_gal_cyl_feh_mgfe_plot(simdir, simnum, species, Rcyl, numvols, zcut)
     ax.set_ylabel('y [kpc]', fontsize=25)  
     plt.subplots_adjust(hspace=0.05)
     plt.tight_layout()
+    plt.savefig(f'm12b_galactic_cylinder_metallicity', bbox_inches='tight')
     plt.show()
 
 def generate_vertical_feh_mgfe_profile_plot(simdir, simnum, species, Rcyl, numvols, zcut): #use zcut=10
@@ -495,9 +502,10 @@ def generate_vertical_feh_mgfe_profile_plot(simdir, simnum, species, Rcyl, numvo
     ax.text(0.05, -0.36, r'$\frac{d[\mathrm{Fe/H}]}{d\mathrm{z}}=-0.129\ [\mathrm{dex}\ \mathrm{kpc}^{-1}]$', c='black', fontsize=25)
     plt.subplots_adjust(hspace=0.05)
     plt.tight_layout()
+    plt.savefig(f'm12b_vertical_metallicity_gradient', bbox_inches='tight')
     plt.show()
 
-def generate_azim_avgd_met_grad_plot(simdir, simnum, species, Rcyl, numvols, zcut): #use zcut=10
+def generate_azim_avgd_met_grad_plot(simdir, simnum, species, Rcyl, numvols, zcut, minval_mgfe, maxval_mgfe): #use zcut=10
     '''
     Generate 2-panel plot of azimuthally averaged metallicity gradient for [Fe/H] and [Mg/Fe].
 
@@ -508,6 +516,8 @@ def generate_azim_avgd_met_grad_plot(simdir, simnum, species, Rcyl, numvols, zcu
         Rcyl (float): Galactocentric radius (cylindrical) (e.g., 8)
         numvols (int): number of solar volumes (e.g., 16)
         zcut (float): value of the cut on |z|
+        minval_mgfe (float): minimum value for [Mg/Fe] colorbar
+        maxval_mgfe (float): maximum value for [Mg/Fe] colorbar
     '''
     data_vols = subselect_solar_cyls(simdir, simnum, species, Rcyl, numvols, zcut)
     z_array_list = []
@@ -614,7 +624,7 @@ def generate_azim_avgd_met_grad_plot(simdir, simnum, species, Rcyl, numvols, zcu
     mean_mgfe = sum_mgfe / 16
 
     X, Y = np.meshgrid(mean_vz[:,0], mean_z[0,:])
-    cs = ax.pcolormesh(X, Y, mean_mgfe, vmin=0.18, vmax=0.35, cmap=cmr.torch)
+    cs = ax.pcolormesh(X, Y, mean_mgfe, vmin=minval_mgfe, vmax=maxval_mgfe, cmap=cmr.torch) #most recent range 0.18, 0.35
 
     ax.tick_params(axis='both', which='major', labelsize=20)
     ax.set_ylim(-2.5, 2.5)
@@ -629,9 +639,10 @@ def generate_azim_avgd_met_grad_plot(simdir, simnum, species, Rcyl, numvols, zcu
     ax.set_aspect(40)
     plt.subplots_adjust(wspace=-0.4)
     plt.tight_layout()
+    plt.savefig(f'm12b_azimuthally_averged_metallicity_gradient', bbox_inches='tight')
     plt.show()
 
-def generate_data_model_residual_plot(simdir, simnum, species, Rcyl, numvols, zcut, idx):
+def generate_data_model_residual_plot(simdir, simnum, species, Rcyl, numvols, zcut, minval_feh, maxval_feh):
     '''
     Generate 3-panel plot of FIRE data, OTI best-fit model, and normalized residuals.
 
@@ -642,63 +653,65 @@ def generate_data_model_residual_plot(simdir, simnum, species, Rcyl, numvols, zc
         Rcyl (float): Galactocentric radius (cylindrical) (e.g., 8)
         numvols (int): number of solar volumes (e.g., 16)
         zcut (float): value of the cut on |z|
-        idx (int): index of volume to plot
+        minval_feh (float): minimum value for [Fe/H] colorbar
+        maxval_feh (float): maximum value for [Fe/H] colorbar
     '''
     res_list, bdata_list, model_list, bounds_list = run_oti_analysis(simdir, simnum, species, Rcyl, numvols, zcut)
-    fig, axes = plt.subplots(1, 3, figsize=(16, 6), sharex=True, sharey=True, constrained_layout=True)
-        
-    cs = axes[0].pcolormesh(
-    bdata_list[idx]["vel"].to_value(u.km/u.s),
-    bdata_list[idx]["pos"].to_value(u.kpc),
-    bdata_list[idx]["label"],
-    vmin=-1.75,
-    vmax=0,
-    cmap=cmr.torch
-    )
-    cb = fig.colorbar(cs, ax=axes[0:2],fraction=0.023, pad=0.02)
-    cb.set_label(r"$\langle$[Fe/H]$\rangle$ [dex]", fontsize=25, rotation=270, labelpad=30)
-    cb.ax.set_ylim(-1.75, 0)
-    cb.ax.yaxis.set_tick_params(labelsize=25)
-    axes[0].set_aspect(40)
-    axes[0].set_ylim(-3.5, 3.5)
-    axes[0].set_xlim(-150, 150)
-    
-    model_feh = model_list[idx].get_label(bdata_list[idx]["pos"], bdata_list[idx]["vel"], res_list[idx].params)
-    cs = axes[1].pcolormesh(
-        bdata_list[idx]["vel"].to_value(u.km / u.s),
-        bdata_list[idx]["pos"].to_value(u.kpc),
-        model_feh,
-        cmap=cmr.torch,
-        rasterized=True,
-        vmin=-1.75,
-        vmax=0,
-    )
-    axes[1].set_aspect(40)
-    axes[1].set_ylim(-3.5, 3.5)
-    axes[1].set_xlim(-150, 150)
-    
-    cs = axes[2].pcolormesh(
-        bdata_list[idx]["vel"].to_value(u.km / u.s),
-        bdata_list[idx]["pos"].to_value(u.kpc),
-        (bdata_list[idx]["label"] - model_feh) / bdata_list[idx]["label_err"],
-        cmap="RdBu_r",
-        vmin=-3,
-        vmax=3,
-        rasterized=True,
-    )
-    cb = fig.colorbar(cs, ax=axes[2],fraction=0.046, pad=0.04)
-    cb.set_label("(FIRE $-$ OTI) / error", fontsize=25, rotation=270, labelpad=30)
-    cb.ax.yaxis.set_tick_params(labelsize=25)
-    axes[2].set_aspect(40)
-    axes[0].set_ylabel(f"$z$ [{u.kpc:latex_inline}]", fontsize=25)
-    for ax in axes:
-        ax.set_xlabel(f"$v_z$ [{u.km/u.s:latex_inline}]", fontsize=25)
-        ax.tick_params(axis='both', which='major', labelsize=25)
-        
-    axes[0].set_title(f"FIRE Data V{idx+1}", fontsize=25)
-    axes[1].set_title("OTI Fitted Model", fontsize=25)
-    axes[2].set_title("Normalized Residuals", fontsize=25)
-    plt.show() 
+    for idx in list(range(numvols)):
+        fig, axes = plt.subplots(1, 3, figsize=(16, 6), sharex=True, sharey=True, constrained_layout=True)
+
+        cs = axes[0].pcolormesh(
+            bdata_list[idx]["vel"].to_value(u.km/u.s),
+            bdata_list[idx]["pos"].to_value(u.kpc),
+            bdata_list[idx]["label"],
+            vmin=minval_feh, #-1.75 m12i feh
+            vmax=maxval_feh, #0 m12i feh
+            cmap=cmr.torch
+        )
+        cb = fig.colorbar(cs, ax=axes[0:2], fraction=0.023, pad=0.02)
+        cb.set_label(r"$\langle$[Fe/H]$\rangle$ [dex]", fontsize=25, rotation=270, labelpad=30)
+        cb.ax.set_ylim(-1.75, 0)
+        cb.ax.yaxis.set_tick_params(labelsize=25)
+        axes[0].set_aspect(40)
+        axes[0].set_ylim(-3.5, 3.5)
+        axes[0].set_xlim(-150, 150)
+
+        model_feh = model_list[idx].get_label(bdata_list[idx]["pos"], bdata_list[idx]["vel"], res_list[idx].params)
+        cs = axes[1].pcolormesh(
+            bdata_list[idx]["vel"].to_value(u.km / u.s),
+            bdata_list[idx]["pos"].to_value(u.kpc),
+            model_feh,
+            cmap=cmr.torch,
+            rasterized=True,
+            vmin=minval_feh, #-1.75 m12i feh
+            vmax=maxval_feh, #0 m12i feh
+        )
+        axes[1].set_aspect(40)
+        axes[1].set_ylim(-3.5, 3.5)
+        axes[1].set_xlim(-150, 150)
+
+        cs = axes[2].pcolormesh(
+            bdata_list[idx]["vel"].to_value(u.km / u.s),
+            bdata_list[idx]["pos"].to_value(u.kpc),
+            (bdata_list[idx]["label"] - model_feh) / bdata_list[idx]["label_err"],
+            cmap="RdBu_r",
+            vmin=-3,
+            vmax=3,
+            rasterized=True,
+        )
+        cb = fig.colorbar(cs, ax=axes[2], fraction=0.046, pad=0.04)
+        cb.set_label("(FIRE $-$ OTI) / error", fontsize=25, rotation=270, labelpad=30)
+        cb.ax.yaxis.set_tick_params(labelsize=25)
+        axes[2].set_aspect(40)
+        axes[0].set_ylabel(f"$z$ [{u.kpc:latex_inline}]", fontsize=25)
+        for ax in axes:
+            ax.set_xlabel(f"$v_z$ [{u.km/u.s:latex_inline}]", fontsize=25)
+            ax.tick_params(axis='both', which='major', labelsize=25)
+
+        axes[0].set_title(f"FIRE Data V{idx+1}", fontsize=25)
+        axes[1].set_title("OTI Fitted Model", fontsize=25)
+        axes[2].set_title("Normalized Residuals", fontsize=25)
+        plt.savefig(f'm12b_data_model_residual_v{idx + 1}', bbox_inches='tight')
 
     
 def generate_vertical_acceleration_profiles_plot(simdir, simnum, species, Rcyl, numvols, zcut):
@@ -996,7 +1009,7 @@ def generate_normalized_residuals_plot(simdir, simnum, species, Rcyl, numvols, z
     plt.tight_layout()
     plt.show()
 
-def generate_stellar_smd_plot(simdir, simnum, species, Rcyl, numvols, zcut):
+def generate_stellar_smd_plot(simdir, simnum, species, Rcyl, numvols, zcut, minval_feh, maxval_feh):
     '''
     Generate plot of true FIRE & OTI-inferred stellar surface mass density at |z|=1.1 kpc.
 
@@ -1007,6 +1020,8 @@ def generate_stellar_smd_plot(simdir, simnum, species, Rcyl, numvols, zcut):
         Rcyl (float): Galactocentric radius (cylindrical) (e.g., 8)
         numvols (int): number of solar volumes (e.g., 16)
         zcut (float): value of the cut on |z|
+        minval_feh (float): minimum value for [Fe/H] colorbar
+        maxval_feh (float): maximum value for [Fe/H] colorbar
     '''
     data_vols = subselect_solar_cyls(simdir, simnum, species, Rcyl, numvols, zcut)
     part_star = gizmo.gizmo_io.Read.read_snapshots([species], 'index', simnum, simulation_directory=simdir, assign_hosts_rotation=True, assign_hosts=True)
@@ -1190,7 +1205,7 @@ def generate_stellar_smd_plot(simdir, simnum, species, Rcyl, numvols, zcut):
     plt.tick_params(axis='both', which='major', labelsize=20, width=2, length=10)
 
     mean_feh, xe, ye, bn = scipy.stats.binned_statistic_2d(x_masked, y_masked, feh_masked, statistic='mean', range=[[-15, 15], [-15, 15]], bins=[num_bins_x,num_bins_y])
-    cs = axins.pcolormesh(xe, ye, mean_feh.T, cmap=cmr.neutral, vmin=-0.5, vmax=0.3, alpha=0.25)
+    cs = axins.pcolormesh(xe, ye, mean_feh.T, cmap=cmr.neutral, vmin=minval_feh, vmax=maxval_feh, alpha=0.25) #-0.5 to 0.3 m12i feh, 
     angles = np.linspace(0, 360, 16, endpoint=False)
     theta = np.radians(angles)
 
@@ -1287,6 +1302,7 @@ def generate_metallicity_gradient_plot(simdir, simnum, species, Rcyl, numvols, z
     plt.subplots_adjust(wspace=0.001, hspace=0.001)
     plt.subplots_adjust(right=0.87) 
     plt.tight_layout()
+    plt.savefig(f'm12b_{ear}_metallicity_gradient', bbox_inches='tight')
     plt.show()
 
 def generate_stargasdm_rho_plot(simdir, simnum, species, Rcyl, numvols, zcut): #use zcut=5
@@ -1476,9 +1492,10 @@ def generate_stargasdm_rho_plot(simdir, simnum, species, Rcyl, numvols, zcut): #
         
     plt.xlim(-1.5,1.5)
     plt.tight_layout()
+    plt.savefig(f'm12b_vertical_density_profile', bbox_inches='tight')
     plt.show()
 
-def generate_asymmetry_figofmer(simdir, simnum, species, Rcyl, numvols, zcut, idx_list): #species='all', zcut=5, idx_list=[1, 11, 13, 15]
+def generate_asymmetry_figofmer(simdir, simnum, species, Rcyl, numvols, zcut, idx_list=None): #species='all', zcut=5, idx_list=[1, 11, 13, 15]
     '''
     Generate figure of merit bar chart to compare the asymmetry across volumes. 
 
@@ -1670,7 +1687,8 @@ def generate_asymmetry_figofmer(simdir, simnum, species, Rcyl, numvols, zcut, id
     for i in range(len(x_)):
         fom = calculate_asymmetry(total_density[i][:,idx][10:20], zbinmiddles[i][10:20])
         fig_of_merit.append(fom)
-
+    if idx_list is None:
+        idx_list = []
     vol_labels = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16']
     plt.bar(vol_labels, np.abs(fig_of_merit), color=colors_)
     highlight_indices = idx_list
@@ -1679,5 +1697,5 @@ def generate_asymmetry_figofmer(simdir, simnum, species, Rcyl, numvols, zcut, id
     plt.xlabel('Solar Volumes')
     plt.ylabel('Asymmetry Metric')
     plt.tight_layout()
-    #plt.savefig(f'figure_of_merit', bbox_inches='tight')
+    plt.savefig(f'm12b_asymmetry_figure_of_merit', bbox_inches='tight')
     plt.show()

@@ -23,9 +23,13 @@ def load_simulation_data(simdir, snapnum, species):
     vx = part[species].prop('host.velocity.principal.cartesian')[:,0]
     vy = part[species].prop('host.velocity.principal.cartesian')[:,1]
     vz = part[species].prop('host.velocity.principal.cartesian')[:,2]
-    ax  = part[species].prop('host.acceleration.principal.cartesian')[:,0]
-    ay  = part[species].prop('host.acceleration.principal.cartesian')[:,1]
-    az  = part[species].prop('host.acceleration.principal.cartesian')[:,2]
+    
+    try:
+        ax  = part[species].prop('host.acceleration.principal.cartesian')[:,0]
+        ay  = part[species].prop('host.acceleration.principal.cartesian')[:,1]
+        az  = part[species].prop('host.acceleration.principal.cartesian')[:,2]
+    except KeyError:
+        ax = ay = az = None 
 
     age  = part[species].prop('age')
     mass = part[species].prop('mass')
