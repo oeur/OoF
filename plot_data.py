@@ -50,7 +50,7 @@ plt.rcParams['figure.dpi'] = 150
 plt.rcParams['axes.labelsize'] = 20
 plt.rcParams['xtick.labelsize'] = 20
 plt.rcParams['ytick.labelsize'] = 20
-
+simname='m12f'
 def generate_surface_mass_density_plot(simdir, simnum, species1, species2, Rcyl, numvols, zcut): #use zcut=1.5
     '''
     Generate 2-panel surface mass density plot of FIRE gas and stellar data.
@@ -178,7 +178,7 @@ def generate_surface_mass_density_plot(simdir, simnum, species1, species2, Rcyl,
     plt.gca().set_aspect('equal')
     plt.subplots_adjust(wspace=-0.25)
     plt.tight_layout()
-    plt.savefig(f'm12b_surface_mass_density', bbox_inches='tight')
+    plt.savefig(f'{simname}_surface_mass_density', bbox_inches='tight')
     plt.show()
 
 def generate_mean_stellar_motion_plot(simdir, simnum, species, Rcyl, numvols, zcut): #use zcut=1.5
@@ -270,7 +270,7 @@ def generate_mean_stellar_motion_plot(simdir, simnum, species, Rcyl, numvols, zc
     ax.set_ylabel('y [kpc]', fontsize=25)  
     plt.subplots_adjust(hspace=0.05)
     plt.tight_layout()
-    plt.savefig(f'm12b_mean_stellar_motion', bbox_inches='tight')
+    plt.savefig(f'{simname}_mean_stellar_motion', bbox_inches='tight')
     plt.show()
 
 def generate_gal_cyl_feh_mgfe_plot(simdir, simnum, species, Rcyl, numvols, zcut,  minval_mgfe, maxval_mgfe, minval_feh, maxval_feh): #use zcut=1.5
@@ -364,7 +364,7 @@ def generate_gal_cyl_feh_mgfe_plot(simdir, simnum, species, Rcyl, numvols, zcut,
     ax.set_ylabel('y [kpc]', fontsize=25)  
     plt.subplots_adjust(hspace=0.05)
     plt.tight_layout()
-    plt.savefig(f'm12b_galactic_cylinder_metallicity', bbox_inches='tight')
+    plt.savefig(f'{simname}_galactic_cylinder_metallicity', bbox_inches='tight')
     plt.show()
 
 def generate_vertical_feh_mgfe_profile_plot(simdir, simnum, species, Rcyl, numvols, zcut): #use zcut=10
@@ -502,7 +502,7 @@ def generate_vertical_feh_mgfe_profile_plot(simdir, simnum, species, Rcyl, numvo
     ax.text(0.05, -0.36, r'$\frac{d[\mathrm{Fe/H}]}{d\mathrm{z}}=-0.129\ [\mathrm{dex}\ \mathrm{kpc}^{-1}]$', c='black', fontsize=25)
     plt.subplots_adjust(hspace=0.05)
     plt.tight_layout()
-    plt.savefig(f'm12b_vertical_metallicity_gradient', bbox_inches='tight')
+    plt.savefig(f'{simname}_vertical_metallicity_gradient', bbox_inches='tight')
     plt.show()
 
 def generate_azim_avgd_met_grad_plot(simdir, simnum, species, Rcyl, numvols, zcut, minval_mgfe, maxval_mgfe): #use zcut=10
@@ -639,7 +639,7 @@ def generate_azim_avgd_met_grad_plot(simdir, simnum, species, Rcyl, numvols, zcu
     ax.set_aspect(40)
     plt.subplots_adjust(wspace=-0.4)
     plt.tight_layout()
-    plt.savefig(f'm12b_azimuthally_averged_metallicity_gradient', bbox_inches='tight')
+    plt.savefig(f'{simname}_azimuthally_averged_metallicity_gradient', bbox_inches='tight')
     plt.show()
 
 def generate_data_model_residual_plot(simdir, simnum, species, Rcyl, numvols, zcut, minval_feh, maxval_feh):
@@ -711,7 +711,7 @@ def generate_data_model_residual_plot(simdir, simnum, species, Rcyl, numvols, zc
         axes[0].set_title(f"FIRE Data V{idx+1}", fontsize=25)
         axes[1].set_title("OTI Fitted Model", fontsize=25)
         axes[2].set_title("Normalized Residuals", fontsize=25)
-        plt.savefig(f'm12b_data_model_residual_v{idx + 1}', bbox_inches='tight')
+        plt.savefig(f'{simname}_data_model_residual_v{idx + 1}', bbox_inches='tight')
 
     
 def generate_vertical_acceleration_profiles_plot(simdir, simnum, species, Rcyl, numvols, zcut):
@@ -833,8 +833,8 @@ def generate_vertical_acceleration_profiles_plot(simdir, simnum, species, Rcyl, 
         ul_1sigma = bestfit_az_list[i].to_value(u.km / u.s / u.Myr)+std_tot[i]
         ll_3sigma = bestfit_az_list[i].to_value(u.km / u.s / u.Myr)-(3*std_tot[i])
         ul_3sigma = bestfit_az_list[i].to_value(u.km / u.s / u.Myr)+(3*std_tot[i])
-        sigma1_handle = ax.fill_between(zgrid.value, ll_1sigma, ul_1sigma, color=colors[i], alpha=0.5, label=r'1-$\sigma$')
-        sigma3_handle = ax.fill_between(zgrid.value, ll_3sigma, ul_3sigma, color=colors[i], alpha=0.25, label=r'3-$\sigma$')
+        sigma1_handle = ax.fill_between(zgrid.value, ll_1sigma, ul_1sigma, color=colors[i], alpha=0.5, label=r'1$\sigma$')
+        sigma3_handle = ax.fill_between(zgrid.value, ll_3sigma, ul_3sigma, color=colors[i], alpha=0.25, label=r'3$\sigma$')
         
         ax.plot(bc[i], (fire_az_binned[i] * u.km/ (u.s * u.Gyr)).to(u.km / (u.Myr * u.s)).value, ls='solid', c='k', lw=2, label=f'FIRE')
         ax.plot(zgrid_list[i].to_value(u.kpc),
@@ -844,13 +844,14 @@ def generate_vertical_acceleration_profiles_plot(simdir, simnum, species, Rcyl, 
             ax.legend(loc='lower left', fontsize=20)  # For the first subplot, show full legend
         else:
             # For other subplots, only show the sigma labels in the legend
-            ax.legend(handles=[sigma1_handle, sigma3_handle], labels=[r'1-$\sigma$', r'3-$\sigma$'], loc='lower left', fontsize=20)
+            ax.legend(handles=[sigma1_handle, sigma3_handle], labels=[r'1$\sigma$', r'3$\sigma$'], loc='lower left', fontsize=20)
         ax.set_xlim(-1.5, 1.5)
         ax.set_ylim(-3.5,3.5)
 
     fig.text(0.55, 0.05, "z [kpc]", ha='center', va='center', fontsize=30)
     fig.text(0.08, 0.5, f"a$_z$ [{u.km/u.s/u.Myr:latex_inline}]", ha='center', va='center', rotation='vertical', fontsize=30)
     plt.subplots_adjust(wspace=0.001, hspace=0.001)
+    plt.savefig(f'm12i_az', bbox_inches='tight')
     plt.show()
 
 def generate_normalized_residuals_plot(simdir, simnum, species, Rcyl, numvols, zcut):
@@ -885,7 +886,7 @@ def generate_normalized_residuals_plot(simdir, simnum, species, Rcyl, numvols, z
         sorted_z_vols = [data_vols['z'][i][idx] for idx in sorted_indices]
         sorted_az_vols = [data_vols['az'][i][idx] for idx in sorted_indices]
         
-        binned_az, bin_edges, _ = stats.binned_statistic(sorted_z_vols, sorted_az_vols, 'mean', bins=np.linspace(-max_z_list[i], max_z_list[i], 101))
+        binned_az, bin_edges, _ = stats.binned_statistic(sorted_z_vols, sorted_az_vols, 'mean', bins=np.linspace(-max_z_list[i], max_z_list[i], 101)) #101 keep
         fire_az_binned.append(binned_az)
         bin_width = (bin_edges[1] - bin_edges[0])
         bin_centers = bin_edges[1:] - bin_width/2
@@ -895,7 +896,7 @@ def generate_normalized_residuals_plot(simdir, simnum, species, Rcyl, numvols, z
     bestfit_az_list = []
 
     for i in range(len(data_vols['x'])):
-        zgrid = np.linspace(-1, 1, 1024) * max_z_list[i]
+        zgrid = np.linspace(-1, 1, 100) * max_z_list[i] #change to 1024
         zgrid_list.append(zgrid)
         bestfit_az = model_list[i].get_acceleration(zgrid, res_list[i].params)
         bestfit_az_list.append(bestfit_az)
@@ -907,7 +908,7 @@ def generate_normalized_residuals_plot(simdir, simnum, species, Rcyl, numvols, z
             mcmc_states, mcmc_params = pickle.load(file)
 
         accs = []
-        zgrid = np.linspace(-1, 1, 1024) * max_z_list[i]
+        zgrid = np.linspace(-1, 1, 100) * max_z_list[i] #change to 1024
         for p in mcmc_params:
             acc = model_list[i].get_acceleration(zgrid, p)
             accs.append(acc.value)
@@ -924,7 +925,7 @@ def generate_normalized_residuals_plot(simdir, simnum, species, Rcyl, numvols, z
             bootstrap_params = pickle.load(file)
 
         accs = []
-        zgrid = np.linspace(-1, 1, 1024) * max_z_list[i]
+        zgrid = np.linspace(-1, 1, 100) * max_z_list[i] #change to 1024
 
         for p in bootstrap_params:
             acc = model_list[i].get_acceleration(zgrid, p)
@@ -932,8 +933,8 @@ def generate_normalized_residuals_plot(simdir, simnum, species, Rcyl, numvols, z
         
         accs = np.array(accs) * acc.unit
         accs_boots.append(accs.to(u.km / (u.Myr * u.s)).value)
-    std_mcmc = [[np.std(accs_mcmc[j][:, i]) for i in range(1024)] for j in range(16)]
-    std_boots = [[np.std(accs_boots[j][:, i]) for i in range(1024)] for j in range(16)]
+    std_mcmc = [[np.std(accs_mcmc[j][:, i]) for i in range(100)] for j in range(16)] #change to 1024
+    std_boots = [[np.std(accs_boots[j][:, i]) for i in range(100)] for j in range(16)] #change to 1024
     #Combine variances in quadrature to get a total uncertainty
     std_tot = [np.sqrt(np.array(u.Quantity(std_boots[i]))**2 + np.array(u.Quantity(std_mcmc[i]))**2) for i in range(16)]
 
@@ -947,7 +948,7 @@ def generate_normalized_residuals_plot(simdir, simnum, species, Rcyl, numvols, z
             sorted_z_vols = data_vols['z'][i][sorted_indices]
             sorted_az_vols = data_vols['az'][i][sorted_indices]
         
-            binned_az, bin_edges, _ = stats.binned_statistic(sorted_z_vols, sorted_az_vols, 'mean', bins=1024)
+            binned_az, bin_edges, _ = stats.binned_statistic(sorted_z_vols, sorted_az_vols, 'mean', bins=100) #change to 1024
             fire_az_binned.append(binned_az)
             bin_width = (bin_edges[1] - bin_edges[0])
             bin_centers = bin_edges[1:] - bin_width/2
@@ -958,7 +959,15 @@ def generate_normalized_residuals_plot(simdir, simnum, species, Rcyl, numvols, z
         for i in range(len(data_vols['x'])):
             bestfit_az = model_list[i].get_acceleration((bc[i]*u.kpc), res_list[i].params)
             bestfit_az_list.append(bestfit_az)
-        
+        # Define the quantities Q1 = 100.01 Q2 = 100.00
+        # Calculate the absolute difference absolute_difference = abs(Q1 - Q2) 
+        # Calculate the average of the two quantities average = (Q1 + Q2) / 2
+        # Calculate the percentage difference percentage_difference = (absolute_difference / average) * 100
+        Q1 = (fire_az_binned[i] * u.km/ (u.s * u.Gyr)).to(u.km / (u.Myr * u.s)).value
+        Q2 = (bestfit_az_list[i]).to(u.km / (u.Myr * u.s)).value
+        absolute_difference = abs(Q1 - Q2)
+        average = (Q1 + Q2) / 2
+        percentage_difference = [(absolute_difference / average) * 100 for i in range(len(data_vols['x']))]
         residual = [(fire_az_binned[i] * u.km/ (u.s * u.Gyr)).to(u.km / (u.Myr * u.s)) - (bestfit_az_list[i]).to(u.km / (u.Myr * u.s)) for i in range(len(data_vols['x']))]
         norm_res = np.array(residual)/np.array(err[i])
         return norm_res
@@ -966,7 +975,7 @@ def generate_normalized_residuals_plot(simdir, simnum, species, Rcyl, numvols, z
     zgrid_list = []
 
     for i in range(len(data_vols['x'])):
-        zgrid = np.linspace(-1, 1, 1024) * max_z_list[i]
+        zgrid = np.linspace(-1, 1, 100) * max_z_list[i] #change to 1024
         zgrid_list.append(zgrid)
 
     stacked_zgrid = [np.stack(zgrid_list[i].to_value(u.kpc)) for i in range(len(data_vols['x']))]
@@ -981,12 +990,15 @@ def generate_normalized_residuals_plot(simdir, simnum, species, Rcyl, numvols, z
     fig, ax = plt.subplots(figsize=(10,8)) #100 bins instead of 1024
     colors = [cmr.infinity(i / 16) for i in range(16)]
     res = calculate_normalized_residuals(std_tot)
-    for i in range(len(data_vols['x'])):
+    #idx_list = [1, 13, 15] #real bad
+    #idx_list = [7, 8, 9, 10] #real good
+    idx_list = [4, 5, 6] #real alright
+    for i in idx_list: #range(len(data_vols['x']))
         ax.plot(
             zgrid_list[i].to_value(u.kpc),
             res[i],
             label=f"V{i+1}",
-            color=colors[i]
+            color=colors[i], lw=2
         )
     mean_line, = ax.plot(mean_zgrid,
                         mean_res,
@@ -999,14 +1011,16 @@ def generate_normalized_residuals_plot(simdir, simnum, species, Rcyl, numvols, z
     ]
     legend_handles.append(plt.Line2D([], [], color='k', marker='s', linestyle='None', markersize=10, markeredgewidth=5, label='Mean'))
     ax.legend(handles=legend_handles, ncol=6, loc='lower center', prop={'size': 14})
+    #ax.legend(handles=legend_handles, ncol=2, loc='upper right', prop={'size': 14})
 
     plt.axvline(0, -20, 20, c='k', ls='--', lw=2, alpha=0.25)
     plt.xlim(-1.5,1.5)
     plt.ylim(-12,12)
     plt.tick_params(axis='both', which='major', labelsize=25, width=2, length=10)
     plt.xlabel("z [kpc]", fontsize=25)
-    plt.ylabel(r"(FIRE - OTI) / $\sigma_{MCMC+boostrapping}$", fontsize=25, labelpad=-1.5)
+    plt.ylabel(r"(FIRE - OTI) / $\sigma_{MCMC+bootstrapping}$", fontsize=25, labelpad=-1.5) #
     plt.tight_layout()
+    plt.savefig(f'm12i_normed_residual_V5_6_7', bbox_inches='tight')
     plt.show()
 
 def generate_stellar_smd_plot(simdir, simnum, species, Rcyl, numvols, zcut, minval_feh, maxval_feh):
@@ -1302,7 +1316,7 @@ def generate_metallicity_gradient_plot(simdir, simnum, species, Rcyl, numvols, z
     plt.subplots_adjust(wspace=0.001, hspace=0.001)
     plt.subplots_adjust(right=0.87) 
     plt.tight_layout()
-    plt.savefig(f'm12b_{ear}_metallicity_gradient', bbox_inches='tight')
+    plt.savefig(f'{simname}_{ear}_metallicity_gradient', bbox_inches='tight')
     plt.show()
 
 def generate_stargasdm_rho_plot(simdir, simnum, species, Rcyl, numvols, zcut): #use zcut=5
@@ -1492,7 +1506,7 @@ def generate_stargasdm_rho_plot(simdir, simnum, species, Rcyl, numvols, zcut): #
         
     plt.xlim(-1.5,1.5)
     plt.tight_layout()
-    plt.savefig(f'm12b_vertical_density_profile', bbox_inches='tight')
+    plt.savefig(f'{simname}_vertical_density_profile', bbox_inches='tight')
     plt.show()
 
 def generate_asymmetry_figofmer(simdir, simnum, species, Rcyl, numvols, zcut, idx_list=None): #species='all', zcut=5, idx_list=[1, 11, 13, 15]
@@ -1697,5 +1711,5 @@ def generate_asymmetry_figofmer(simdir, simnum, species, Rcyl, numvols, zcut, id
     plt.xlabel('Solar Volumes')
     plt.ylabel('Asymmetry Metric')
     plt.tight_layout()
-    plt.savefig(f'm12b_asymmetry_figure_of_merit', bbox_inches='tight')
+    plt.savefig(f'{simname}_asymmetry_figure_of_merit', bbox_inches='tight')
     plt.show()
