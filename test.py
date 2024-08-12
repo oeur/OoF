@@ -5,6 +5,8 @@ from plot_data import *
 simpath = '/Users/micahoeur/Dropbox/Research/Sarah/FIRE2_m12i_metal_diffusion/output_with_accel'
 snum = 600
 spcs = 'star'
+minval_feh = -0.5 
+maxval_feh = 0.3 
 #load_simulation_data(simpath, snum, spcs)
 #print("load_simulation_data ran successfully")
 #subselect_solar_cyls(simpath, snum, spcs, 8, 16, 10)
@@ -25,10 +27,10 @@ spcs = 'star'
 #print("generate_azim_avgd_met_grad_plot ran successfully")
 #generate_data_model_residual_plot(simpath, snum, spcs, 8, 16, 10, minval_feh, maxval_feh)
 #print("generate_data_model_residual_plot ran successfully")
-generate_vertical_acceleration_profiles_plot(simpath, snum, spcs, 8, 16, 10)
-print("generate_vertical_acceleration_profiles_plot ran successfully")
-#generate_normalized_residuals_plot(simpath, snum, spcs, 8, 16, 10)
-#print("generate_normalized_residuals_plot ran successfully")
+#generate_vertical_acceleration_profiles_plot(simpath, snum, spcs, 8, 16, 10)
+#print("generate_vertical_acceleration_profiles_plot ran successfully")
+generate_normalized_residuals_plot(simpath, snum, spcs, 8, 16, 10)
+print("generate_normalized_residuals_plot ran successfully")
 #generate_stellar_smd_plot(simpath, snum, spcs, 8, 16, 10, minval_feh, maxval_feh)
 #print("generate_stellar_smd_plot ran successfully")
 #generate_metallicity_gradient_plot(simpath, snum, spcs, 8, 16, 10, 'feh', 'Fe/H', -1.2, 0.1)

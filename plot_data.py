@@ -453,9 +453,12 @@ def generate_vertical_feh_mgfe_profile_plot(simdir, simnum, species, Rcyl, numvo
     bf_mean_mgfe = (mean_m_mgfe*np.array(z_abs[0]))+mean_b_mgfe
     bf_median_mgfe = (median_m_mgfe*np.array(z_abs[0]))+median_b_mgfe
     column_names = ['z', 'feh']
-    graf_avg = pd.read_csv('https://drive.google.com/file/d/1yG98Un6vK9at9-I6oEs98idzAiBxtf2m/view?usp=drive_link', names=column_names, header=None, delimiter='\t') 
-    graf_ub = pd.read_csv('https://drive.google.com/file/d/1yc84PWXCw-IRF3Mv6ZRjIKUI2flzmgoe/view?usp=drive_link', names=column_names, header=None, delimiter='\t') 
-    graf_lb = pd.read_csv('https://drive.google.com/file/d/1HyFKRguGFGFt2vf0p1oENHcI02fkExpA/view?usp=drive_link', names=column_names, header=None, delimiter='\t') 
+    #graf_avg = pd.read_csv('https://drive.google.com/file/d/1yG98Un6vK9at9-I6oEs98idzAiBxtf2m/view?usp=drive_link', names=column_names, header=None, delimiter='\t') 
+    #graf_ub = pd.read_csv('https://drive.google.com/file/d/1yc84PWXCw-IRF3Mv6ZRjIKUI2flzmgoe/view?usp=drive_link', names=column_names, header=None, delimiter='\t') 
+    #graf_lb = pd.read_csv('https://drive.google.com/file/d/1HyFKRguGFGFt2vf0p1oENHcI02fkExpA/view?usp=drive_link', names=column_names, header=None, delimiter='\t') 
+    graf_avg = pd.read_csv('./Graf2024.csv', names=column_names, header=None)
+    graf_ub = pd.read_csv('./upper_bound_Graf2024.csv', names=column_names, header=None)
+    graf_lb = pd.read_csv('./lower_bound_Graf2024.csv', names=column_names, header=None)
     ub = ((mean_m_feh+np.std(slopes_abs_z['feh']))*np.array(z_abs[0]))+(mean_b_feh+np.std(int_abs_z['feh']))
     lb = ((mean_m_feh-np.std(slopes_abs_z['feh']))*np.array(z_abs[0]))+(mean_b_feh-np.std(int_abs_z['feh']))
     ub3 = ((mean_m_feh+3*np.std(slopes_abs_z['feh']))*np.array(z_abs[0]))+(mean_b_feh+3*np.std(int_abs_z['feh']))
@@ -473,7 +476,7 @@ def generate_vertical_feh_mgfe_profile_plot(simdir, simnum, species, Rcyl, numvo
     # MgFe
     ax = axs[1]
     ax.plot(z_abs[0], bf_mean_mgfe, c='black', ls='-', linewidth=2.5, label='m12i mean best-fit', zorder=10)
-    ax.fill_between(z_abs[0][3884:5778], ub3_mgfe[3884:5778], lb3_mgfe[3884:5778], color='black', alpha=0.4, label=r'3-$\sigma$', interpolate = True)
+    ax.fill_between(z_abs[0][3884:5778], ub3_mgfe[3884:5778], lb3_mgfe[3884:5778], color='black', alpha=0.4, label=r'3$\sigma$', interpolate = True)
     ax.set_ylim(0.1, 0.35)
     ax.set_xlim(0, 1.5)
     ax.tick_params(axis='both', which='major', labelsize=10)
@@ -488,9 +491,9 @@ def generate_vertical_feh_mgfe_profile_plot(simdir, simnum, species, Rcyl, numvo
     #FeH
     ax = axs[0]
     ax.plot(z_abs[0], bf_mean, c='black', ls='-', linewidth=2.5, label='m12i mean best-fit', zorder=10)
-    ax.fill_between(z_abs[0][3884:5778], ub3[3884:5778], lb3[3884:5778], color='black', alpha=0.4, label=r'3-$\sigma$', interpolate = True)
+    ax.fill_between(z_abs[0][3884:5778], ub3[3884:5778], lb3[3884:5778], color='black', alpha=0.4, label=r'3$\sigma$', interpolate = True)
     ax.plot(graf_avg['z'], graf_avg['feh'], color=colors[15], linestyle='--', label='Mean (Graf et al. 2024)', alpha=0.75, zorder=6)
-    ax.fill_between(graf_ub['z'], graf_lb['feh'], graf_ub['feh'], color=colors[15], alpha=0.1, label=r'1-$\sigma$', zorder=5)
+    ax.fill_between(graf_ub['z'], graf_lb['feh'], graf_ub['feh'], color=colors[15], alpha=0.1, label=r'1$\sigma$', zorder=5)
     ax.set_ylim(-0.45, 0.2)
     ax.set_xlim(0, 1.5)
     ax.tick_params(axis='both', which='major', labelsize=10)
@@ -502,7 +505,7 @@ def generate_vertical_feh_mgfe_profile_plot(simdir, simnum, species, Rcyl, numvo
     ax.text(0.05, -0.36, r'$\frac{d[\mathrm{Fe/H}]}{d\mathrm{z}}=-0.129\ [\mathrm{dex}\ \mathrm{kpc}^{-1}]$', c='black', fontsize=25)
     plt.subplots_adjust(hspace=0.05)
     plt.tight_layout()
-    plt.savefig(f'{simname}_vertical_metallicity_gradient', bbox_inches='tight')
+    plt.savefig(f'm12i_vertical_metallicity_gradient', bbox_inches='tight')
     plt.show()
 
 def generate_azim_avgd_met_grad_plot(simdir, simnum, species, Rcyl, numvols, zcut, minval_mgfe, maxval_mgfe): #use zcut=10
@@ -970,7 +973,7 @@ def generate_normalized_residuals_plot(simdir, simnum, species, Rcyl, numvols, z
         percentage_difference = [(absolute_difference / average) * 100 for i in range(len(data_vols['x']))]
         residual = [(fire_az_binned[i] * u.km/ (u.s * u.Gyr)).to(u.km / (u.Myr * u.s)) - (bestfit_az_list[i]).to(u.km / (u.Myr * u.s)) for i in range(len(data_vols['x']))]
         norm_res = np.array(residual)/np.array(err[i])
-        return norm_res
+        return percentage_difference
     
     zgrid_list = []
 
@@ -990,10 +993,12 @@ def generate_normalized_residuals_plot(simdir, simnum, species, Rcyl, numvols, z
     fig, ax = plt.subplots(figsize=(10,8)) #100 bins instead of 1024
     colors = [cmr.infinity(i / 16) for i in range(16)]
     res = calculate_normalized_residuals(std_tot)
+    print(res)
     #idx_list = [1, 13, 15] #real bad
     #idx_list = [7, 8, 9, 10] #real good
-    idx_list = [4, 5, 6] #real alright
-    for i in idx_list: #range(len(data_vols['x']))
+    #idx_list = [4, 5, 6] #real alright
+    missing_list = [2, 3, 4, 5, 11] 
+    for i in missing_list: # range(len(data_vols['x'])):
         ax.plot(
             zgrid_list[i].to_value(u.kpc),
             res[i],
@@ -1015,12 +1020,12 @@ def generate_normalized_residuals_plot(simdir, simnum, species, Rcyl, numvols, z
 
     plt.axvline(0, -20, 20, c='k', ls='--', lw=2, alpha=0.25)
     plt.xlim(-1.5,1.5)
-    plt.ylim(-12,12)
+    plt.ylim(-20,20)
     plt.tick_params(axis='both', which='major', labelsize=25, width=2, length=10)
     plt.xlabel("z [kpc]", fontsize=25)
-    plt.ylabel(r"(FIRE - OTI) / $\sigma_{MCMC+bootstrapping}$", fontsize=25, labelpad=-1.5) #
+    plt.ylabel(r"FIRE - OTI (% difference)", fontsize=25, labelpad=-1.5) #(FIRE - OTI) / $\sigma_{MCMC+bootstrapping}$
     plt.tight_layout()
-    plt.savefig(f'm12i_normed_residual_V5_6_7', bbox_inches='tight')
+    #plt.savefig(f'm12i_percentage_difference', bbox_inches='tight')
     plt.show()
 
 def generate_stellar_smd_plot(simdir, simnum, species, Rcyl, numvols, zcut, minval_feh, maxval_feh):
@@ -1182,8 +1187,8 @@ def generate_stellar_smd_plot(simdir, simnum, species, Rcyl, numvols, zcut, minv
 
     # Plot OTI above data
     for idx, value in enumerate(oti_sigma_above):
-        ax.errorbar(idx + 0.12, value, yerr=sigma_std_above[idx], fmt='o', ecolor=colors[idx], capsize=5, label=r'1-$\sigma$', marker='', linewidth=4, zorder=1)
-        ax.errorbar(idx + 0.12, value, yerr=3 * sigma_std_above[idx], fmt='o', ecolor=colors[idx], capsize=5, label=r'3-$\sigma$', marker='', linewidth=2, alpha=0.5, zorder=2)
+        ax.errorbar(idx + 0.12, value, yerr=sigma_std_above[idx], fmt='o', ecolor=colors[idx], capsize=5, label=r'1$', marker='', linewidth=4, zorder=1)
+        ax.errorbar(idx + 0.12, value, yerr=3 * sigma_std_above[idx], fmt='o', ecolor=colors[idx], capsize=5, label=r'3$\sigma$', marker='', linewidth=2, alpha=0.5, zorder=2)
         ax.scatter(idx + 0.12, value, color=colors[idx], marker='o', s=200, facecolors=colors[idx], edgecolors=colors[idx], linewidth=2, zorder=10)
 
     # Plot FIRE below data
@@ -1191,11 +1196,12 @@ def generate_stellar_smd_plot(simdir, simnum, species, Rcyl, numvols, zcut, minv
         ax.scatter(idx - 0.12, value, color=colors[idx], marker='^', s=300, facecolors='white', edgecolors=colors[idx], linewidth=2)
     # Plot OTI below data
     for idx, value in enumerate(oti_sigma_below):
-        ax.errorbar(idx - 0.12, value, yerr=sigma_std_below[idx], fmt='o', ecolor=colors[idx], capsize=5, label=r'1-$\sigma$', marker='', linewidth=4, zorder=3)
-        ax.errorbar(idx - 0.12, value, yerr=3 * sigma_std_below[idx], fmt='o', ecolor=colors[idx], capsize=5, label=r'3-$\sigma$', marker='', linewidth=2, alpha=0.5, zorder=4)
+        ax.errorbar(idx - 0.12, value, yerr=sigma_std_below[idx], fmt='o', ecolor=colors[idx], capsize=5, label=r'1$\sigma$', marker='', linewidth=4, zorder=3)
+        ax.errorbar(idx - 0.12, value, yerr=3 * sigma_std_below[idx], fmt='o', ecolor=colors[idx], capsize=5, label=r'3$\sigma$', marker='', linewidth=2, alpha=0.5, zorder=4)
         ax.scatter(idx - 0.12, value, color=colors[idx], marker='d', s=200, facecolors='white', edgecolors=colors[idx], linewidth=2, zorder=7)
     ax.set_xticks(range(16))
-    ax.set_xticklabels(['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16'])
+    ax.set_xticklabels(['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16'], fontsize=25)
+    ax.set_yticklabels(ax.get_yticks(), fontsize=25)
 
     legend_elements = [plt.Line2D([0], [0], marker='*', color='w', label=key, markersize=10, markerfacecolor=color) 
                     for key, color in zip(legend_keys, colors)]
@@ -1209,8 +1215,8 @@ def generate_stellar_smd_plot(simdir, simnum, species, Rcyl, numvols, zcut, minv
                 markersize=15, markerfacecolor='white', markeredgecolor='black'),
         plt.Line2D([0], [0], marker='d', color='w', label='OTI below', 
                 markersize=10, markerfacecolor='white', markeredgecolor='black'),
-        plt.Line2D([0], [0], color='k', linewidth=4, label='1-$\sigma$', linestyle='-'),
-        plt.Line2D([0], [0], color='k', linewidth=2, label='3-$\sigma$', linestyle='-', alpha=0.5)]
+        plt.Line2D([0], [0], color='k', linewidth=4, label='1$\sigma$', linestyle='-'),
+        plt.Line2D([0], [0], color='k', linewidth=2, label='3$\sigma$', linestyle='-', alpha=0.5)]
 
     all_handles = legend_elements + marker_legend_elements
     ax.legend(handles=marker_legend_elements, loc='upper left', fontsize=25)
@@ -1238,6 +1244,7 @@ def generate_stellar_smd_plot(simdir, simnum, species, Rcyl, numvols, zcut, minv
     axins.set_ylim(-10, 10)
     axins.tick_params(labelleft=False, labelbottom=False)
     plt.tight_layout()
+    plt.savefig(f'm12i_stellar_smd', bbox_inches='tight')
     plt.show()
 
 def generate_metallicity_gradient_plot(simdir, simnum, species, Rcyl, numvols, zcut, ear, ear_cb, minval, maxval):
