@@ -43,6 +43,8 @@ from matplotlib.patheffects import withStroke
 import requests
 import pickle
 import io
+from astropy.modeling import fitting
+from astropy.modeling.models import custom_model
 plt.rcParams.update(plt.rcParamsDefault)
 plt.rcParams.update({'font.size': 20})
 
@@ -50,7 +52,7 @@ plt.rcParams['figure.dpi'] = 150
 plt.rcParams['axes.labelsize'] = 20
 plt.rcParams['xtick.labelsize'] = 20
 plt.rcParams['ytick.labelsize'] = 20
-simname='m12f'
+simname='m12i'
 def generate_surface_mass_density_plot(simdir, simnum, species1, species2, Rcyl, numvols, zcut): #use zcut=1.5
     '''
     Generate 2-panel surface mass density plot of FIRE gas and stellar data.
@@ -505,8 +507,8 @@ def generate_vertical_feh_mgfe_profile_plot(simdir, simnum, species, Rcyl, numvo
     ax.text(0.05, -0.36, r'$\frac{d[\mathrm{Fe/H}]}{d\mathrm{z}}=-0.129\ [\mathrm{dex}\ \mathrm{kpc}^{-1}]$', c='black', fontsize=25)
     plt.subplots_adjust(hspace=0.05)
     plt.tight_layout()
-    plt.savefig(f'm12i_vertical_metallicity_gradient', bbox_inches='tight')
-    plt.show()
+    plt.savefig(f'm12i_vertical_metallicity_gradient_z25', bbox_inches='tight')
+    #plt.show()
 
 def generate_azim_avgd_met_grad_plot(simdir, simnum, species, Rcyl, numvols, zcut, minval_mgfe, maxval_mgfe): #use zcut=10
     '''
@@ -642,8 +644,8 @@ def generate_azim_avgd_met_grad_plot(simdir, simnum, species, Rcyl, numvols, zcu
     ax.set_aspect(40)
     plt.subplots_adjust(wspace=-0.4)
     plt.tight_layout()
-    plt.savefig(f'{simname}_azimuthally_averged_metallicity_gradient', bbox_inches='tight')
-    plt.show()
+    plt.savefig(f'{simname}_azimuthally_averaged_metallicity_gradient_z25', bbox_inches='tight')
+    #plt.show()
 
 def generate_data_model_residual_plot(simdir, simnum, species, Rcyl, numvols, zcut, minval_feh, maxval_feh):
     '''
@@ -673,7 +675,7 @@ def generate_data_model_residual_plot(simdir, simnum, species, Rcyl, numvols, zc
         )
         cb = fig.colorbar(cs, ax=axes[0:2], fraction=0.023, pad=0.02)
         cb.set_label(r"$\langle$[Fe/H]$\rangle$ [dex]", fontsize=25, rotation=270, labelpad=30)
-        cb.ax.set_ylim(-1.75, 0)
+        cb.ax.set_ylim(-0.5, 0) #(-1.75, 0)
         cb.ax.yaxis.set_tick_params(labelsize=25)
         axes[0].set_aspect(40)
         axes[0].set_ylim(-3.5, 3.5)
@@ -714,7 +716,7 @@ def generate_data_model_residual_plot(simdir, simnum, species, Rcyl, numvols, zc
         axes[0].set_title(f"FIRE Data V{idx+1}", fontsize=25)
         axes[1].set_title("OTI Fitted Model", fontsize=25)
         axes[2].set_title("Normalized Residuals", fontsize=25)
-        plt.savefig(f'{simname}_data_model_residual_v{idx + 1}', bbox_inches='tight')
+        plt.savefig(f'{simname}_data_model_residual_v{idx + 1}_z25', bbox_inches='tight')
 
     
 def generate_vertical_acceleration_profiles_plot(simdir, simnum, species, Rcyl, numvols, zcut):
@@ -841,7 +843,7 @@ def generate_vertical_acceleration_profiles_plot(simdir, simnum, species, Rcyl, 
         
         ax.plot(bc[i], (fire_az_binned[i] * u.km/ (u.s * u.Gyr)).to(u.km / (u.Myr * u.s)).value, ls='solid', c='k', lw=2, label=f'FIRE')
         ax.plot(zgrid_list[i].to_value(u.kpc),
-                bestfit_az_list[i].to_value(u.km / u.s / u.Myr), ls='dotted', c='k', lw=2, label=f'OTI')
+                bestfit_az_list[i].to_value(u.km / u.s / u.Myr), ls='--', c='k', lw=2, label=f'OTI')
         ax.tick_params(axis='both', which='both', labelsize=30, width=2, length=10)
         if i == 0:
             ax.legend(loc='lower left', fontsize=20)  # For the first subplot, show full legend
@@ -854,8 +856,8 @@ def generate_vertical_acceleration_profiles_plot(simdir, simnum, species, Rcyl, 
     fig.text(0.55, 0.05, "z [kpc]", ha='center', va='center', fontsize=30)
     fig.text(0.08, 0.5, f"a$_z$ [{u.km/u.s/u.Myr:latex_inline}]", ha='center', va='center', rotation='vertical', fontsize=30)
     plt.subplots_adjust(wspace=0.001, hspace=0.001)
-    plt.savefig(f'm12i_az', bbox_inches='tight')
-    plt.show()
+    plt.savefig(f'm12i_az_z25', bbox_inches='tight')
+    #plt.show()
 
 def generate_normalized_residuals_plot(simdir, simnum, species, Rcyl, numvols, zcut):
     '''
@@ -907,7 +909,7 @@ def generate_normalized_residuals_plot(simdir, simnum, species, Rcyl, numvols, z
     #MCMC uncertainty
     accs_mcmc = []
     for i in range(16):
-        with open(f'./mcmc/vol-{i+1}-mcmc-results.pkl', 'rb') as file:
+        with open(f'./mcmc_2.5/volume-{i+1}-mcmc-results.pkl', 'rb') as file:
             mcmc_states, mcmc_params = pickle.load(file)
 
         accs = []
@@ -924,7 +926,7 @@ def generate_normalized_residuals_plot(simdir, simnum, species, Rcyl, numvols, z
     #bootstrapping uncertainty
     accs_boots = []
     for i in range(len(data_vols['x'])):
-        with open(f'./boots/bootstrap_res_v{i+1}.pkl', 'rb') as file:
+        with open(f'./boots_2.5/bootstrap_res_v{i+1}.pkl', 'rb') as file:
             bootstrap_params = pickle.load(file)
 
         accs = []
@@ -970,10 +972,10 @@ def generate_normalized_residuals_plot(simdir, simnum, species, Rcyl, numvols, z
         Q2 = (bestfit_az_list[i]).to(u.km / (u.Myr * u.s)).value
         absolute_difference = abs(Q1 - Q2)
         average = (Q1 + Q2) / 2
-        percentage_difference = [(absolute_difference / average) * 100 for i in range(len(data_vols['x']))]
+        #percentage_difference = [(absolute_difference / average) * 100 for i in range(len(data_vols['x']))]
         residual = [(fire_az_binned[i] * u.km/ (u.s * u.Gyr)).to(u.km / (u.Myr * u.s)) - (bestfit_az_list[i]).to(u.km / (u.Myr * u.s)) for i in range(len(data_vols['x']))]
         norm_res = np.array(residual)/np.array(err[i])
-        return percentage_difference
+        return norm_res
     
     zgrid_list = []
 
@@ -998,7 +1000,7 @@ def generate_normalized_residuals_plot(simdir, simnum, species, Rcyl, numvols, z
     #idx_list = [7, 8, 9, 10] #real good
     #idx_list = [4, 5, 6] #real alright
     missing_list = [2, 3, 4, 5, 11] 
-    for i in missing_list: # range(len(data_vols['x'])):
+    for i in range(len(data_vols['x'])): #missing_list: 
         ax.plot(
             zgrid_list[i].to_value(u.kpc),
             res[i],
@@ -1020,13 +1022,13 @@ def generate_normalized_residuals_plot(simdir, simnum, species, Rcyl, numvols, z
 
     plt.axvline(0, -20, 20, c='k', ls='--', lw=2, alpha=0.25)
     plt.xlim(-1.5,1.5)
-    plt.ylim(-20,20)
+    plt.ylim(-7,7)
     plt.tick_params(axis='both', which='major', labelsize=25, width=2, length=10)
     plt.xlabel("z [kpc]", fontsize=25)
-    plt.ylabel(r"FIRE - OTI (% difference)", fontsize=25, labelpad=-1.5) #(FIRE - OTI) / $\sigma_{MCMC+bootstrapping}$
+    plt.ylabel(r"(FIRE - OTI) / $\sigma_{MCMC+bootstrapping}$", fontsize=25, labelpad=-1.5) #(FIRE - OTI) / $\sigma_{MCMC+bootstrapping}$ #FIRE - OTI (% difference)
     plt.tight_layout()
-    #plt.savefig(f'm12i_percentage_difference', bbox_inches='tight')
-    plt.show()
+    plt.savefig(f'm12i_norm_res_z2_5_zoomed', bbox_inches='tight')
+    #plt.show()
 
 def generate_stellar_smd_plot(simdir, simnum, species, Rcyl, numvols, zcut, minval_feh, maxval_feh):
     '''
@@ -1061,7 +1063,7 @@ def generate_stellar_smd_plot(simdir, simnum, species, Rcyl, numvols, zcut, minv
     #MCMC uncertainty
     accs_mcmc = []
     for i in range(16):
-        with open(f'./mcmc/vol-{i+1}-mcmc-results.pkl', 'rb') as file:
+        with open(f'./mcmc_2.5/volume-{i+1}-mcmc-results.pkl', 'rb') as file:
             mcmc_states, mcmc_params = pickle.load(file)
 
         accs = []
@@ -1078,7 +1080,7 @@ def generate_stellar_smd_plot(simdir, simnum, species, Rcyl, numvols, zcut, minv
     #bootstrapping uncertainty
     accs_boots = []
     for i in range(len(data_vols['x'])):
-        with open(f'./boots/bootstrap_res_v{i+1}.pkl', 'rb') as file:
+        with open(f'./boots_2.5/bootstrap_res_v{i+1}.pkl', 'rb') as file:
             bootstrap_params = pickle.load(file)
 
         accs = []
@@ -1167,7 +1169,7 @@ def generate_stellar_smd_plot(simdir, simnum, species, Rcyl, numvols, zcut, minv
         fire_sigma_below.append(fire_sig)
         oti_sigma_below.append(oti_sig)
         sigma_std_below.append(oti_sig_std)
-    disk_indices = np.where((np.abs(x) < 15) & (np.abs(y) < 15) & (np.abs(z) < 1.5) & (age <= 2.5))
+    disk_indices = np.where((np.abs(x) < 15) & (np.abs(y) < 15) & (np.abs(z) < 2.5))
     x_masked     = x[disk_indices]
     y_masked     = y[disk_indices]
     feh_masked    = feh[disk_indices]
@@ -1244,8 +1246,8 @@ def generate_stellar_smd_plot(simdir, simnum, species, Rcyl, numvols, zcut, minv
     axins.set_ylim(-10, 10)
     axins.tick_params(labelleft=False, labelbottom=False)
     plt.tight_layout()
-    plt.savefig(f'm12i_stellar_smd', bbox_inches='tight')
-    plt.show()
+    plt.savefig(f'm12i_stellar_smd_z2_5', bbox_inches='tight')
+    #plt.show()
 
 def generate_metallicity_gradient_plot(simdir, simnum, species, Rcyl, numvols, zcut, ear, ear_cb, minval, maxval):
     '''
@@ -1326,7 +1328,7 @@ def generate_metallicity_gradient_plot(simdir, simnum, species, Rcyl, numvols, z
     plt.savefig(f'{simname}_{ear}_metallicity_gradient', bbox_inches='tight')
     plt.show()
 
-def generate_stargasdm_rho_plot(simdir, simnum, species, Rcyl, numvols, zcut): #use zcut=5
+def generate_vertical_density_profiles_plot(simdir, simnum, species, Rcyl, numvols, zcut, bin): #use zcut=5
     '''
     Generate a 16-panel plot of true FIRE star, gas, dark matter, and total vertical volume density profiles. 
 
@@ -1434,18 +1436,18 @@ def generate_stargasdm_rho_plot(simdir, simnum, species, Rcyl, numvols, zcut): #
     def find_closest_index(arr, target):
         idx = (np.abs(arr - target)).argmin()
         return idx
-    bn=30
+    bn=bin
     ms, xes, yes, _ = stats.binned_statistic_2d(
         star_vols['Rs_in'][0], star_vols['zs_in'][0], star_vols['ms_in'][0], 
-        bins=bn, range=[[6.59, 9.41], [-5, 5]], statistic='sum'
+        bins=bn, range=[[6.59, 9.41], [-1*zcut, zcut]], statistic='sum'
     )
     mg, _, _, _ = stats.binned_statistic_2d(
         gas_vols['Rg_in'][0], gas_vols['zg_in'][0], gas_vols['mg_in'][0], 
-        bins=bn, range=[[6.59, 9.41], [-5, 5]], statistic='sum'
+        bins=bn, range=[[6.59, 9.41], [-1*zcut, zcut]], statistic='sum'
     )
     mdm, _, _, _ = stats.binned_statistic_2d(
         dark_vols['Rdm_in'][0], dark_vols['zdm_in'][0], dark_vols['mdm_in'][0], 
-        bins=bn, range=[[6.59, 9.41], [-5, 5]], statistic='sum'
+        bins=bn, range=[[6.59, 9.41], [-1*zcut, zcut]], statistic='sum'
     )
 
     rbinmids = (xes[:-1] + xes[1:])/2
@@ -1466,9 +1468,9 @@ def generate_stargasdm_rho_plot(simdir, simnum, species, Rcyl, numvols, zcut): #
     zbinmiddles = []
 
     for i in range(len(x_)):
-        ms, xes, yes, bns = stats.binned_statistic_2d(star_vols['Rs_in'][i], star_vols['zs_in'][i], star_vols['ms_in'][i], bins=bn, range=[[6.59, 9.41], [-5, 5]], statistic='sum')
-        mg, xeg, yeg, bng = stats.binned_statistic_2d(gas_vols['Rg_in'][i], gas_vols['zg_in'][i], gas_vols['mg_in'][i], bins=bn, range=[[6.59, 9.41], [-5, 5]], statistic='sum')
-        mdm, xedm, yedm, bndm = stats.binned_statistic_2d(dark_vols['Rdm_in'][i], dark_vols['zdm_in'][i], dark_vols['mdm_in'][i], bins=bn, range=[[6.59, 9.41], [-5, 5]], statistic='sum')
+        ms, xes, yes, bns = stats.binned_statistic_2d(star_vols['Rs_in'][i], star_vols['zs_in'][i], star_vols['ms_in'][i], bins=bn, range=[[6.59, 9.41], [-1*zcut, zcut]], statistic='sum')
+        mg, xeg, yeg, bng = stats.binned_statistic_2d(gas_vols['Rg_in'][i], gas_vols['zg_in'][i], gas_vols['mg_in'][i], bins=bn, range=[[6.59, 9.41], [-1*zcut, zcut]], statistic='sum')
+        mdm, xedm, yedm, bndm = stats.binned_statistic_2d(dark_vols['Rdm_in'][i], dark_vols['zdm_in'][i], dark_vols['mdm_in'][i], bins=bn, range=[[6.59, 9.41], [-1*zcut, zcut]], statistic='sum')
         rbinmids = (xes[:-1] + xes[1:])/2
         rbinsize = xes[1:] - xes[:-1]
         zbinsize = yes[1:] - yes[:-1]
@@ -1502,7 +1504,7 @@ def generate_stargasdm_rho_plot(simdir, simnum, species, Rcyl, numvols, zcut): #
         ax.plot(zbinmiddles[i], gas_density[i][:,idx], c=colors_[i], ls='--', linewidth=3, label='gas')
         ax.plot(zbinmiddles[i], dark_density[i][:,idx], c=colors_[i], ls='dotted', linewidth=3, label='dark')
         ax.plot(zbinmiddles[i], total_density[i][:,idx], c='k', ls='-', linewidth=3, label='total')
-        ax.axvline(0, 0, 1e12, ls='--', c='k', alpha=0.15, linewidth=2.5)
+        ax.axvline(0, 0, 1e12, ls='--', c='k', alpha=0.25, linewidth=2.5)
     for i in [0, 4, 8, 12]:
         axs[i].set_ylabel(r'$\rho$ [M$_{\odot}$ kpc$^{-3}$]', fontsize=30)
     for i in [1]:
@@ -1513,10 +1515,10 @@ def generate_stargasdm_rho_plot(simdir, simnum, species, Rcyl, numvols, zcut): #
         
     plt.xlim(-1.5,1.5)
     plt.tight_layout()
-    plt.savefig(f'{simname}_vertical_density_profile', bbox_inches='tight')
-    plt.show()
+    plt.savefig(f'{simname}_vertical_density_profile_z25', bbox_inches='tight')
+    #plt.show()
 
-def generate_asymmetry_figofmer(simdir, simnum, species, Rcyl, numvols, zcut, idx_list=None): #species='all', zcut=5, idx_list=[1, 11, 13, 15]
+def generate_asymmetry_figofmer(simdir, simnum, species, Rcyl, numvols, zcut, bin, idx_list=None): #species='all', zcut=5, idx_list=[1, 11, 13, 15]
     '''
     Generate figure of merit bar chart to compare the asymmetry across volumes. 
 
@@ -1634,15 +1636,15 @@ def generate_asymmetry_figofmer(simdir, simnum, species, Rcyl, numvols, zcut, id
     bn=30
     ms, xes, yes, bns = stats.binned_statistic_2d(
         star_vols['Rs_in'][0], star_vols['zs_in'][0], star_vols['ms_in'][0], 
-        bins=bn, range=[[6.59, 9.41], [-5, 5]], statistic='sum'
+        bins=bn, range=[[6.59, 9.41], [-1*zcut, zcut]], statistic='sum'
     )
     mg, xeg, yeg, bng = stats.binned_statistic_2d(
         gas_vols['Rg_in'][0], gas_vols['zg_in'][0], gas_vols['mg_in'][0], 
-        bins=bn, range=[[6.59, 9.41], [-5, 5]], statistic='sum'
+        bins=bn, range=[[6.59, 9.41], [-1*zcut, zcut]], statistic='sum'
     )
     mdm, xedm, yedm, bndm = stats.binned_statistic_2d(
         dark_vols['Rdm_in'][0], dark_vols['zdm_in'][0], dark_vols['mdm_in'][0], 
-        bins=bn, range=[[6.59, 9.41], [-5, 5]], statistic='sum'
+        bins=bn, range=[[6.59, 9.41], [-1*zcut, zcut]], statistic='sum'
     )
 
     rbinmids = (xes[:-1] + xes[1:])/2
@@ -1655,7 +1657,7 @@ def generate_asymmetry_figofmer(simdir, simnum, species, Rcyl, numvols, zcut, id
     target_value = 8
     idx = find_closest_index(rbinmids, target_value)
 
-    bn=30
+    bn=bin
     stellar_density  = []
     gas_density = []
     dark_density = []
@@ -1663,9 +1665,9 @@ def generate_asymmetry_figofmer(simdir, simnum, species, Rcyl, numvols, zcut, id
     zbinmiddles = []
 
     for i in range(len(x_)):
-        ms, xes, yes, _ = stats.binned_statistic_2d(star_vols['Rs_in'][i], star_vols['zs_in'][i], star_vols['ms_in'][i], bins=bn, range=[[6.59, 9.41], [-5, 5]], statistic='sum')
-        mg, _, _, _ = stats.binned_statistic_2d(gas_vols['Rg_in'][i], gas_vols['zg_in'][i], gas_vols['mg_in'][i], bins=bn, range=[[6.59, 9.41], [-5, 5]], statistic='sum')
-        mdm, _, _, _ = stats.binned_statistic_2d(dark_vols['Rdm_in'][i], dark_vols['zdm_in'][i], dark_vols['mdm_in'][i], bins=bn, range=[[6.59, 9.41], [-5, 5]], statistic='sum')
+        ms, xes, yes, _ = stats.binned_statistic_2d(star_vols['Rs_in'][i], star_vols['zs_in'][i], star_vols['ms_in'][i], bins=bn, range=[[6.59, 9.41], [-1*zcut, zcut]], statistic='sum')
+        mg, _, _, _ = stats.binned_statistic_2d(gas_vols['Rg_in'][i], gas_vols['zg_in'][i], gas_vols['mg_in'][i], bins=bn, range=[[6.59, 9.41], [-1*zcut, zcut]], statistic='sum')
+        mdm, _, _, _ = stats.binned_statistic_2d(dark_vols['Rdm_in'][i], dark_vols['zdm_in'][i], dark_vols['mdm_in'][i], bins=bn, range=[[6.59, 9.41], [-1*zcut, zcut]], statistic='sum')
         rbinmids = (xes[:-1] + xes[1:])/2
         rbinsize = xes[1:] - xes[:-1]
         zbinsize = yes[1:] - yes[:-1]
@@ -1718,5 +1720,586 @@ def generate_asymmetry_figofmer(simdir, simnum, species, Rcyl, numvols, zcut, id
     plt.xlabel('Solar Volumes')
     plt.ylabel('Asymmetry Metric')
     plt.tight_layout()
-    plt.savefig(f'{simname}_asymmetry_figure_of_merit', bbox_inches='tight')
+    plt.savefig(f'{simname}_asymmetry_figure_of_merit_z2_5', bbox_inches='tight')
     plt.show()
+
+def generate_asymmetry_vs_b_plot(simdir, simnum, species, Rcyl, numvols, zcut):
+    '''
+    Generate a scatter plot of scale height as a function of vertical asymmetry colored by chi squared.
+
+    Args:
+        simdir (str): filepath to directory where sim is located
+        snapnum (int): snapshot number (e.g., 600)
+        species (str): 'star', 'gas', 'dark' or 'all'
+        Rcyl (float): Galactocentric radius (cylindrical) (e.g., 8)
+        numvols (int): number of solar volumes (e.g., 16)
+        zcut (float): value of the cut on |z|
+    '''
+    angles = np.linspace(0, 360, 16, endpoint=False)
+    theta = np.radians(angles)
+    data_vols = subselect_solar_cyls(simdir, simnum, species, Rcyl, numvols, zcut)
+    res_list, bdata_list, model_list, bounds_list = run_oti_analysis(simdir, simnum, species, Rcyl, numvols, zcut)
+    #MCMC uncertainty
+    accs_mcmc = []
+    for i in range(16):
+        with open(f'volume-{1}-mcmc-results_z35.pkl', 'rb') as file:
+            mcmc_states, mcmc_params = pickle.load(file)
+        accs = []
+        zgrid = np.linspace(-1, 1, 1024) * max_z_list[i]
+        for p in mcmc_params:
+            acc = model_list[i].get_acceleration(zgrid, p)
+            accs.append(acc.value)
+        a_unit = u.km / u.s / u.Myr
+        accs = accs * acc.unit
+        accs_mcmc.append(accs.to(u.km / (u.Myr * u.s)).value)
+    #bootstrapping uncertainty
+    accs_boots = []
+    for i in range(16):
+        file_path = "." 
+        with open(f'bootstrap_res_v{i+1}_z35.pkl', 'rb') as file:
+            bootstrap_params = pickle.load(file)
+
+        accs = []
+        zgrid = np.linspace(-1, 1, 1024) * max_z_list[i]
+
+        for p in bootstrap_params:
+            # Compute acceleration for current parameters
+            acc = model_list[i].get_acceleration(zgrid, p)
+            accs.append(acc.value)
+        
+        a_unit = u.km / u.s / u.Myr
+        accs = np.array(accs) * acc.unit
+        accs_boots.append(accs.to(u.km / (u.Myr * u.s)).value)
+    std_boots = [[np.std(accs_boots[j][:, i]) for i in range(100)] for j in range(16)]
+    std_mcmc = [[np.std(accs_mcmc[j][:, i]) for i in range(100)] for j in range(16)]
+    std_tot = [np.sqrt(np.array(u.Quantity(std_boots[i]))**2 + np.array(u.Quantity(std_mcmc[i]))**2) for i in range(16)]
+    zgrid_list_100 = []
+    bestfit_az_list_100 = []
+
+    for i in range(len(keep_volumes)):
+        zgrid = np.linspace(-1, 1, 100) * max_z_list[i]
+        zgrid_list_100.append(zgrid)
+        bestfit_az = model_list[i].get_acceleration(zgrid, res_list[i].params)
+        bestfit_az_list_100.append(bestfit_az)
+    fire_az_binned_100 = []
+    bc_100 = []
+
+    for i in range(len(data_vols['vz'])):
+        # Sort z_vols and accelerations arrays together based on z_vols
+        sorted_indices = sorted(range(len(data_vols['z'][i])), key=lambda k: data_vols['z'][i][k])
+        sorted_z_vols = [data_vols['z'][i][idx] for idx in sorted_indices]
+        sorted_az_vols = [data_vols['az'][i][idx] for idx in sorted_indices]
+        
+        binned_az, bin_edges, binnumber = stats.binned_statistic(sorted_z_vols, sorted_az_vols, 'mean', bins=zvz_bins["pos"])
+        fire_az_binned_100.append(binned_az)
+        bin_width = (bin_edges[1] - bin_edges[0])
+        bin_centers = bin_edges[1:] - bin_width/2
+        bc_100.append(bin_centers)
+    def chi_squared(true, model, error):
+        subtraction = true - model
+        numerator = (subtraction)**2
+        denominator = error**2
+        chi_sq = np.sum(numerator/denominator)
+        return chi_sq
+    ll_1sigma = [bestfit_az_list_100[i].to_value(u.km / u.s / u.Myr) - std_tot[i] for i in range(16)]
+    ul_1sigma = [bestfit_az_list_100[i].to_value(u.km / u.s / u.Myr) + std_tot[i] for i in range(16)]
+    errors = [ul_1sigma[i] - ll_1sigma[i] for i in range(16)]
+    x_values = np.linspace(-3.5, 3.5, 100)
+    fire = []
+    oti = []
+    err = []
+
+    for i in range(16):
+        y_values_fire = (fire_az_binned_100[i] * u.km / (u.s * u.Gyr)).to(u.km / (u.Myr * u.s)).value
+        y_values_bestfit = bestfit_az_list_100[i].to_value(u.km / u.s / u.Myr)
+        
+        # Create a mask for x-axis values between -1.5 and 1.5
+        mask = (x_values >= -1.5) & (x_values <= 1.5)
+
+        x_filtered = x_values[mask]
+        y_filtered_fire = y_values_fire[mask]
+        fire.append(y_filtered_fire)
+        y_filtered_bestfit = y_values_bestfit[mask]
+        oti.append(y_filtered_bestfit)
+        errors_filtered = errors[i][mask] 
+        err.append(errors_filtered)
+    chi = [chi_squared(fire[i], oti[i], err[i]) for i in range(16)]
+    colors = [cmr.infinity(i / 16) for i in range(16)]
+    #MN fitting
+    def find_closest_index(arr, target):
+        idx = (np.abs(arr - np.abs(target))).argmin()
+        return idx
+    bn=30
+    ms, xes, yes, bns = stats.binned_statistic_2d(
+        data_vols['Rxy'][0], data_vols['z'][0], data_vols['mass'][0], 
+        bins=bn, range=[[6.59, 9.41], [-1*zcut, zcut]], statistic='sum'
+    )
+
+    rbinmids = (xes[:-1] + xes[1:])/2
+    rbinsize = xes[1:] - xes[:-1]
+    zbinsize = yes[1:] - yes[:-1]
+    zbinmids = (yes[:-1] + yes[1:])/2
+    rbinmids = rbinmids[:, np.newaxis, np.newaxis]
+    rbinsize = rbinsize[:, np.newaxis, np.newaxis]
+    zbinsize = zbinsize[np.newaxis, :, np.newaxis]
+    theta_size = theta[1] - theta[0] 
+    target_value = 8
+    idx = find_closest_index(rbinmids, target_value)
+    stellar_density  = []
+    rbinmiddles = []
+    zbinmiddles = []
+
+    for i in range(len(x_)):
+        ms, xes, yes, bns = stats.binned_statistic_2d(
+        data_vols['Rxy'][i], data_vols['z'][i], data_vols['mass'][i], 
+        bins=50, range=[[6.59, 9.41], [-zcut, zcut]], statistic='sum'
+    )
+        rbinmids = (xes[:-1] + xes[1:])/2
+        rbinsize = xes[1:] - xes[:-1]
+        zbinsize = yes[1:] - yes[:-1]
+        zbinmids = (yes[:-1] + yes[1:])/2
+        theta_size = theta[1] - theta[0]
+        rbinmiddles.append(rbinmids)
+        zbinmiddles.append(zbinmids)
+        dV = rbinmids*rbinsize*theta_size*zbinsize
+        s = ms.T/dV
+        stellar_density.append(s)
+    r_grid, z_grid = np.meshgrid(rbinmiddles[0], zbinmiddles[0])
+    ln_rho8 = []
+    for i in range(16):
+        ln_dens = np.log(stellar_density[i][:,idx])
+        ln_rho8.append(ln_dens)
+    def mn_func_unshifted(R, z, M, a, b):
+        num = (a * R**2) + (a + 3 * np.sqrt(z**2 + b**2)) * ((a + np.sqrt(z**2 + b**2))**2)
+        first = (R**2 + (a + np.sqrt(z**2 + b**2))**2)
+        second = (z**2 + b**2)
+        den = ((first)**(5/2) * (second)**(3/2)) 
+        M = np.asarray(M)
+        return np.log((((1e10*M) * b**2)/(4 * np.pi)) * (num/den))
+    def mn_func_shifted(R, z, M, a, b, z0): 
+        z_shifted = z - z0
+        num = (a * R**2) + (a + 3 * np.sqrt(z_shifted**2 + b**2)) * ((a + np.sqrt(z_shifted**2 + b**2))**2)
+        first = (R**2 + (a + np.sqrt(z_shifted**2 + b**2))**2)
+        second = (z_shifted**2 + b**2)
+        den = ((first)**(5/2) * (second)**(3/2)) 
+        M = np.asarray(M)
+        return np.log((((1e10 * M) * b**2) / (4 * np.pi)) * (num / den))
+    #V1
+    @custom_model
+    def mn(R, z, M=1.9, a=3.2, b=1.12):
+        num = (a * R**2) + (a + 3 * np.sqrt(z**2 + b**2)) * ((a + np.sqrt(z**2 + b**2))**2)
+        first = (R**2 + (a + np.sqrt(z**2 + b**2))**2)
+        second = (z**2 + b**2)
+        den = ((first)**(5/2) * (second)**(3/2)) 
+        M = np.asarray(M)
+        return np.log((((1e10*M) * b**2)/(4 * np.pi)) * (num/den))
+
+    bounds = {'M': (0.001, 25), 'a': (0.001, 35), 'b': (0.01, 10)} 
+
+    initial_model = mn(bounds=bounds) 
+    fitter = fitting.LevMarLSQFitter()
+    bestpars_1 = fitter(initial_model,rbinmiddles[0], zbinmiddles[0], ln_rho8[0]) 
+    bestpars_1
+    rhomn_1 = mn_func_unshifted(rbinmiddles[0], zbinmiddles[0], M=bestpars_1.M.value, a=bestpars_1.a.value, b=bestpars_1.b.value)
+    #V2
+    @custom_model
+    def mn(R, z, M=0.5, a=3.2, b=1.12, z0=0):
+        z_shifted = z - z0
+        num = (a * R**2) + (a + 3 * np.sqrt(z_shifted**2 + b**2)) * ((a + np.sqrt(z_shifted**2 + b**2))**2)
+        first = (R**2 + (a + np.sqrt(z_shifted**2 + b**2))**2)
+        second = (z_shifted**2 + b**2)
+        den = ((first)**(5/2) * (second)**(3/2)) 
+        M = np.asarray(M)
+        
+        return np.log((((1e10 * M) * b**2) / (4 * np.pi)) * (num / den))
+
+    bounds = {'M': (0.001, 25), 'a': (0.001, 35), 'b': (0.01, 10), 'z0': (-0.3, 1)}  # 
+
+    # Fit the model
+    initial_model = mn(bounds=bounds) 
+    fitter = fitting.LevMarLSQFitter()
+    bestpars_2 = fitter(initial_model, rbinmiddles[0], zbinmiddles[0], ln_rho8[1])
+    bestpars_2
+    rhomn_2 = mn_func_shifted(rbinmiddles[0], zbinmiddles[0], M=bestpars_2.M.value, a=bestpars_2.a.value, b=bestpars_2.b.value, z0=bestpars_2.z0.value)
+    #V3
+    @custom_model
+    def mn(R, z, M=1.6, a=3.2, b=1.12, z0=0):
+        z_shifted = z - z0
+        num = (a * R**2) + (a + 3 * np.sqrt(z_shifted**2 + b**2)) * ((a + np.sqrt(z_shifted**2 + b**2))**2)
+        first = (R**2 + (a + np.sqrt(z_shifted**2 + b**2))**2)
+        second = (z_shifted**2 + b**2)
+        den = ((first)**(5/2) * (second)**(3/2)) 
+        M = np.asarray(M)
+        return np.log((((1e10*M) * b**2)/(4 * np.pi)) * (num/den))
+
+    bounds = {'M': (0.001, 25), 'a': (0.001, 35), 'b': (0.01, 10), 'z0': (-0.8, 1)} 
+
+    initial_model = mn(bounds=bounds) 
+    fitter = fitting.LevMarLSQFitter()
+    bestpars_3 = fitter(initial_model,rbinmiddles[2], zbinmiddles[2], ln_rho8[2]) 
+    bestpars_3
+    rhomn_3 = mn_func_shifted(rbinmiddles[2], zbinmiddles[2], M=bestpars_3.M.value, a=bestpars_3.a.value, b=bestpars_3.b.value, z0=bestpars_3.z0.value)
+    #V4
+    @custom_model
+    def mn(R, z, M=1.6, a=3.2, b=1.12):
+        num = (a * R**2) + (a + 3 * np.sqrt(z**2 + b**2)) * ((a + np.sqrt(z**2 + b**2))**2)
+        first = (R**2 + (a + np.sqrt(z**2 + b**2))**2)
+        second = (z**2 + b**2)
+        den = ((first)**(5/2) * (second)**(3/2)) 
+        M = np.asarray(M)
+        return np.log((((1e10*M) * b**2)/(4 * np.pi)) * (num/den))
+
+    bounds = {'M': (0.001, 35), 'a': (0.001, 35), 'b': (0.01, 10)} 
+
+    initial_model = mn(bounds=bounds) 
+    fitter = fitting.LevMarLSQFitter()
+    bestpars_4 = fitter(initial_model,rbinmiddles[0], zbinmiddles[0], ln_rho8[3]) 
+    bestpars_4
+    rhomn_4 = mn_func_unshifted(rbinmiddles[3], zbinmiddles[3], M=bestpars_4.M.value, a=bestpars_4.a.value, b=bestpars_4.b.value)
+    #V5
+    ln_rho8[4] = np.nan_to_num(ln_rho8[4], neginf=14)
+    @custom_model
+    def mn(R, z, M=1.6, a=3.2, b=1.12):
+        num = (a * R**2) + (a + 3 * np.sqrt(z**2 + b**2)) * ((a + np.sqrt(z**2 + b**2))**2)
+        first = (R**2 + (a + np.sqrt(z**2 + b**2))**2)
+        second = (z**2 + b**2)
+        den = ((first)**(5/2) * (second)**(3/2)) 
+        M = np.asarray(M)
+        return np.log((((1e10*M) * b**2)/(4 * np.pi)) * (num/den))
+
+    bounds = {'M': (0.001, 25), 'a': (0.001, 35), 'b': (0.01, 10)} 
+
+    initial_model = mn(bounds=bounds) 
+    fitter = fitting.LevMarLSQFitter()
+    bestpars_5 = fitter(initial_model,rbinmiddles[0], zbinmiddles[0], ln_rho8[4])
+    bestpars_5
+    rhomn_5 = mn_func_unshifted(rbinmiddles[4], zbinmiddles[4], M=bestpars_5.M.value, a=bestpars_5.a.value, b=bestpars_5.b.value)
+    #V6
+    @custom_model
+    def mn(R, z, M=2.6, a=3.2, b=1.12, z0=0):
+        z_shifted = z - z0
+        
+        num = (a * R**2) + (a + 3 * np.sqrt(z_shifted**2 + b**2)) * ((a + np.sqrt(z_shifted**2 + b**2))**2)
+        first = (R**2 + (a + np.sqrt(z_shifted**2 + b**2))**2)
+        second = (z_shifted**2 + b**2)
+        den = ((first)**(5/2) * (second)**(3/2)) 
+        M = np.asarray(M)
+        
+        return np.log((((1e10 * M) * b**2) / (4 * np.pi)) * (num / den))
+
+    bounds = {'M': (0.001, 25), 'a': (0.001, 35), 'b': (0.01, 10), 'z0': (-0.2, 1)}  # 
+
+    # Fit the model
+    initial_model = mn(bounds=bounds) 
+    fitter = fitting.LevMarLSQFitter()
+    bestpars_6 = fitter(initial_model, rbinmiddles[0], zbinmiddles[0], ln_rho8[5])
+    bestpars_6
+    rhomn_6 = mn_func_shifted(rbinmiddles[5], zbinmiddles[5], M=bestpars_6.M.value, a=bestpars_6.a.value, b=bestpars_6.b.value, z0=bestpars_6.z0.value)
+    #V7
+    @custom_model
+    def mn(R, z, M=3.6, a=5.2, b=1.12, z0=0.17):
+        z_shifted = z - z0
+        
+        num = (a * R**2) + (a + 3 * np.sqrt(z_shifted**2 + b**2)) * ((a + np.sqrt(z_shifted**2 + b**2))**2)
+        first = (R**2 + (a + np.sqrt(z_shifted**2 + b**2))**2)
+        second = (z_shifted**2 + b**2)
+        den = ((first)**(5/2) * (second)**(3/2)) 
+        M = np.asarray(M)
+        
+        return np.log((((1e10 * M) * b**2) / (4 * np.pi)) * (num / den))
+
+    bounds = {'M': (0.001, 25), 'a': (0.001, 35), 'b': (0.01, 10), 'z0': (-0.8, 1)}  # 
+
+    # Fit the model
+    initial_model = mn(bounds=bounds) 
+    fitter = fitting.LevMarLSQFitter()
+    bestpars_7 = fitter(initial_model, rbinmiddles[0], zbinmiddles[0], ln_rho8[6])
+    bestpars_7
+    rhomn_7 = mn_func_shifted(rbinmiddles[6], zbinmiddles[6], M=bestpars_7.M.value, a=bestpars_7.a.value, b=bestpars_7.b.value, z0=bestpars_7.z0.value)
+    #V8
+    @custom_model
+    def mn(R, z, M=3.6, a=5.2, b=1.12, z0=0.17):
+        z_shifted = z - z0
+        
+        num = (a * R**2) + (a + 3 * np.sqrt(z_shifted**2 + b**2)) * ((a + np.sqrt(z_shifted**2 + b**2))**2)
+        first = (R**2 + (a + np.sqrt(z_shifted**2 + b**2))**2)
+        second = (z_shifted**2 + b**2)
+        den = ((first)**(5/2) * (second)**(3/2)) 
+        M = np.asarray(M)
+        
+        return np.log((((1e10 * M) * b**2) / (4 * np.pi)) * (num / den))
+
+    bounds = {'M': (0.001, 25), 'a': (0.001, 35), 'b': (0.01, 10), 'z0': (-0.2, 1)}  # 
+
+    # Fit the model
+    initial_model = mn(bounds=bounds) 
+    fitter = fitting.LevMarLSQFitter()
+    bestpars_8 = fitter(initial_model, rbinmiddles[0], zbinmiddles[0], ln_rho8[7])
+    bestpars_8
+    rhomn_8 = mn_func_shifted(rbinmiddles[7], zbinmiddles[7], M=bestpars_8.M.value, a=bestpars_8.a.value, b=bestpars_8.b.value, z0=bestpars_8.z0.value)
+    #V9
+    @custom_model
+    def mn(R, z, M=3.6, a=5.2, b=1.12, z0=0.17):
+        z_shifted = z - z0
+        
+        num = (a * R**2) + (a + 3 * np.sqrt(z_shifted**2 + b**2)) * ((a + np.sqrt(z_shifted**2 + b**2))**2)
+        first = (R**2 + (a + np.sqrt(z_shifted**2 + b**2))**2)
+        second = (z_shifted**2 + b**2)
+        den = ((first)**(5/2) * (second)**(3/2)) 
+        M = np.asarray(M)
+        
+        return np.log((((1e10 * M) * b**2) / (4 * np.pi)) * (num / den))
+
+    bounds = {'M': (0.001, 25), 'a': (0.001, 35), 'b': (0.01, 10), 'z0': (-0.35, 1)}  # 
+
+    # Fit the model
+    initial_model = mn(bounds=bounds) 
+    fitter = fitting.LevMarLSQFitter()
+    bestpars_9 = fitter(initial_model, rbinmiddles[0], zbinmiddles[0], ln_rho8[8])
+    bestpars_9
+    rhomn_9 = mn_func_shifted(rbinmiddles[8], zbinmiddles[8], M=bestpars_9.M.value, a=bestpars_9.a.value, b=bestpars_9.b.value, z0=bestpars_9.z0.value)
+    #V10
+    @custom_model
+    def mn(R, z, M=3.6, a=5.2, b=1.12, z0=0.17):
+        z_shifted = z - z0
+        
+        num = (a * R**2) + (a + 3 * np.sqrt(z_shifted**2 + b**2)) * ((a + np.sqrt(z_shifted**2 + b**2))**2)
+        first = (R**2 + (a + np.sqrt(z_shifted**2 + b**2))**2)
+        second = (z_shifted**2 + b**2)
+        den = ((first)**(5/2) * (second)**(3/2)) 
+        M = np.asarray(M)
+        
+        return np.log((((1e10 * M) * b**2) / (4 * np.pi)) * (num / den))
+
+    bounds = {'M': (0.001, 25), 'a': (0.001, 35), 'b': (0.01, 10), 'z0': (-0.35, 1)}  # 
+
+    # Fit the model
+    initial_model = mn(bounds=bounds) 
+    fitter = fitting.LevMarLSQFitter()
+    bestpars_10 = fitter(initial_model, rbinmiddles[0], zbinmiddles[0], ln_rho8[9])
+    bestpars_10
+    rhomn_10 = mn_func_shifted(rbinmiddles[9], zbinmiddles[9], M=bestpars_10.M.value, a=bestpars_10.a.value, b=bestpars_10.b.value, z0=bestpars_10.z0.value)
+    #V11
+    ln_rho8[10] = np.nan_to_num(ln_rho8[10], neginf=14)
+    @custom_model
+    def mn(R, z, M=3.6, a=5.2, b=1.12, z0=0.17):
+        z_shifted = z - z0
+        
+        num = (a * R**2) + (a + 3 * np.sqrt(z_shifted**2 + b**2)) * ((a + np.sqrt(z_shifted**2 + b**2))**2)
+        first = (R**2 + (a + np.sqrt(z_shifted**2 + b**2))**2)
+        second = (z_shifted**2 + b**2)
+        den = ((first)**(5/2) * (second)**(3/2)) 
+        M = np.asarray(M)
+        
+        return np.log((((1e10 * M) * b**2) / (4 * np.pi)) * (num / den))
+
+    bounds = {'M': (0.001, 25), 'a': (0.001, 35), 'b': (0.01, 10), 'z0': (-0.35, 1)}  # 
+
+    # Fit the model
+    initial_model = mn(bounds=bounds) 
+    fitter = fitting.LevMarLSQFitter()
+    bestpars_11 = fitter(initial_model, rbinmiddles[0], zbinmiddles[0], ln_rho8[10])
+    bestpars_11
+    rhomn_11 = mn_func_shifted(rbinmiddles[10], zbinmiddles[10], M=bestpars_11.M.value, a=bestpars_11.a.value, b=bestpars_11.b.value, z0=bestpars_11.z0.value)
+    #V12
+    @custom_model
+    def mn(R, z, M=3.6, a=5.2, b=1.12, z0=0.17):
+        z_shifted = z - z0
+        
+        num = (a * R**2) + (a + 3 * np.sqrt(z_shifted**2 + b**2)) * ((a + np.sqrt(z_shifted**2 + b**2))**2)
+        first = (R**2 + (a + np.sqrt(z_shifted**2 + b**2))**2)
+        second = (z_shifted**2 + b**2)
+        den = ((first)**(5/2) * (second)**(3/2)) 
+        M = np.asarray(M)
+        
+        return np.log((((1e10 * M) * b**2) / (4 * np.pi)) * (num / den))
+
+    bounds = {'M': (0.001, 30), 'a': (0.001, 35), 'b': (0.01, 10), 'z0': (-0.35, 1)}  # 
+
+    # Fit the model
+    initial_model = mn(bounds=bounds) 
+    fitter = fitting.LevMarLSQFitter()
+    bestpars_12 = fitter(initial_model, rbinmiddles[0], zbinmiddles[0], ln_rho8[11])
+    bestpars_12
+    rhomn_12 = mn_func_shifted(rbinmiddles[11], zbinmiddles[11], M=bestpars_12.M.value, a=bestpars_12.a.value, b=bestpars_12.b.value, z0=bestpars_12.z0.value)
+    #V13
+    @custom_model
+    def mn(R, z, M=3.6, a=5.2, b=1.12, z0=0.17):
+        z_shifted = z - z0
+        
+        num = (a * R**2) + (a + 3 * np.sqrt(z_shifted**2 + b**2)) * ((a + np.sqrt(z_shifted**2 + b**2))**2)
+        first = (R**2 + (a + np.sqrt(z_shifted**2 + b**2))**2)
+        second = (z_shifted**2 + b**2)
+        den = ((first)**(5/2) * (second)**(3/2)) 
+        M = np.asarray(M)
+        
+        return np.log((((1e10 * M) * b**2) / (4 * np.pi)) * (num / den))
+
+    bounds = {'M': (0.001, 25), 'a': (0.001, 35), 'b': (0.01, 10), 'z0': (-0.35, 1)}  # 
+
+    # Fit the model
+    initial_model = mn(bounds=bounds) 
+    fitter = fitting.LevMarLSQFitter()
+    bestpars_13 = fitter(initial_model, rbinmiddles[0], zbinmiddles[0], ln_rho8[12])
+    bestpars_13
+    rhomn_13 = mn_func_shifted(rbinmiddles[12], zbinmiddles[12], M=bestpars_13.M.value, a=bestpars_13.a.value, b=bestpars_13.b.value, z0=bestpars_13.z0.value)
+    #V14
+    @custom_model
+    def mn(R, z, M=3.6, a=0.2, b=1.12, z0=0.17):
+        z_shifted = z - z0
+        
+        num = (a * R**2) + (a + 3 * np.sqrt(z_shifted**2 + b**2)) * ((a + np.sqrt(z_shifted**2 + b**2))**2)
+        first = (R**2 + (a + np.sqrt(z_shifted**2 + b**2))**2)
+        second = (z_shifted**2 + b**2)
+        den = ((first)**(5/2) * (second)**(3/2)) 
+        M = np.asarray(M)
+        
+        return np.log((((1e10 * M) * b**2) / (4 * np.pi)) * (num / den))
+
+    bounds = {'M': (0.001, 30), 'a': (0.001, 35), 'b': (0.01, 10), 'z0': (-0.35, 1)}  # 
+
+    # Fit the model
+    initial_model = mn(bounds=bounds) 
+    fitter = fitting.LevMarLSQFitter()
+    bestpars_14 = fitter(initial_model, rbinmiddles[0], zbinmiddles[0], ln_rho8[13])
+    bestpars_14
+    rhomn_14 = mn_func_shifted(rbinmiddles[13], zbinmiddles[13], M=bestpars_14.M.value, a=bestpars_14.a.value, b=bestpars_14.b.value, z0=bestpars_14.z0.value)
+    #V15
+    @custom_model
+    def mn(R, z, M=3.6, a=0.2, b=1.12, z0=0.17):
+        z_shifted = z - z0
+        
+        num = (a * R**2) + (a + 3 * np.sqrt(z_shifted**2 + b**2)) * ((a + np.sqrt(z_shifted**2 + b**2))**2)
+        first = (R**2 + (a + np.sqrt(z_shifted**2 + b**2))**2)
+        second = (z_shifted**2 + b**2)
+        den = ((first)**(5/2) * (second)**(3/2)) 
+        M = np.asarray(M)
+        
+        return np.log((((1e10 * M) * b**2) / (4 * np.pi)) * (num / den))
+
+    bounds = {'M': (0.001, 30), 'a': (0.001, 35), 'b': (0.01, 10), 'z0': (-0.35, 1)}  # 
+
+    # Fit the model
+    initial_model = mn(bounds=bounds) 
+    fitter = fitting.LevMarLSQFitter()
+    bestpars_15 = fitter(initial_model, rbinmiddles[0], zbinmiddles[0], ln_rho8[14])
+    bestpars_15
+    rhomn_15 = mn_func_shifted(rbinmiddles[14], zbinmiddles[14], M=bestpars_15.M.value, a=bestpars_15.a.value, b=bestpars_15.b.value, z0=bestpars_15.z0.value)
+    #V16
+    @custom_model
+    def mn(R, z, M=3.6, a=0.2, b=1.12, z0=0.17):
+        z_shifted = z - z0
+        
+        num = (a * R**2) + (a + 3 * np.sqrt(z_shifted**2 + b**2)) * ((a + np.sqrt(z_shifted**2 + b**2))**2)
+        first = (R**2 + (a + np.sqrt(z_shifted**2 + b**2))**2)
+        second = (z_shifted**2 + b**2)
+        den = ((first)**(5/2) * (second)**(3/2)) 
+        M = np.asarray(M)
+        
+        return np.log((((1e10 * M) * b**2) / (4 * np.pi)) * (num / den))
+
+    bounds = {'M': (0.001, 30), 'a': (0.001, 35), 'b': (0.01, 10), 'z0': (-0.35, 1)}  # 
+
+    # Fit the model
+    initial_model = mn(bounds=bounds) 
+    fitter = fitting.LevMarLSQFitter()
+    bestpars_16 = fitter(initial_model, rbinmiddles[0], zbinmiddles[0], ln_rho8[15])
+    bestpars_16
+    rhomn_16 = mn_func_shifted(rbinmiddles[15], zbinmiddles[15], M=bestpars_16.M.value, a=bestpars_16.a.value, b=bestpars_16.b.value, z0=bestpars_16.z0.value)
+    rhomn_list = [rhomn_1, rhomn_2, rhomn_3, rhomn_4, rhomn_5, rhomn_6, rhomn_7, rhomn_8, rhomn_9, rhomn_10, rhomn_11, rhomn_12, rhomn_13, rhomn_14, rhomn_15, rhomn_16]
+    num_plots = 16
+    num_cols = 4
+    num_rows = -(-num_plots // num_cols)
+
+    fig, axs = plt.subplots(num_rows, num_cols, figsize=(25, 20), sharex=True, sharey=True)
+    axs = axs.flatten()
+    for ax in axs:
+        for spine in ax.spines.values():
+            spine.set_linewidth(2.5)
+        
+    for i in range(num_plots):
+        axs[i].plot(zbinmiddles[0], ln_rho8[i], c=colors[i], label='True', linewidth=2)
+        axs[i].plot(zbinmiddles[0], rhomn_list[i], ls='--', c=colors[i], label='MN', linewidth=2)
+        plt.tick_params(top=True, right=True)
+        plt.xticks(fontsize=25)
+        plt.yticks(fontsize=25)
+        text_box = f"V{i+1}"
+        axs[i].text(0.9, 0.9, text_box, bbox=dict(facecolor='white', alpha=1),
+                horizontalalignment='right', verticalalignment='top', transform=axs[i].transAxes, fontsize=30)
+        axs[i].tick_params(axis='both', which='both', labelsize=30)
+        axs[i].set_xlim(-zcut, zcut)
+        b_value = eval(f'bestpars_{i + 1}.b.value')  
+        textstr = r'$b$={:.2f} kpc'.format(b_value)
+        props = dict(boxstyle='round', facecolor='k', alpha=0.05)  # 
+        axs[i].text(0.05, 0.95, textstr, transform=axs[i].transAxes,
+                    fontsize=18, verticalalignment='top', bbox=props)
+        axs[0].legend()
+    fig.supxlabel('z [kpc]', fontsize=30)
+    fig.supylabel(r'Volume Mass Density ln($\frac{\rho}{\rho_{0}}$)', fontsize=30)
+    plt.subplots_adjust(wspace=0.001, hspace=0.001)
+    plt.subplots_adjust(right=0.87) 
+    plt.tight_layout()
+    #plt.savefig('m12i_single_mn_fits')
+    plt.show()
+
+    def calculate_asymmetry(rho, z_pos):
+        '''
+        Positive: on avg, density on right > left
+        Negative: on avg, density on left > right
+        '''
+        z_m = (z_pos.min() + z_pos.max()) / 2
+        left_inds = z_pos < z_m
+        right_inds = z_pos > z_m
+        left_dens = rho[left_inds]
+        right_dens = rho[right_inds]
+        right_dens_reversed = right_dens[::-1]
+        right_dens_reversed
+        assert len(left_dens) == len(right_dens_reversed)
+        differences = right_dens_reversed - left_dens #compute differences
+        denominator = left_dens + right_dens_reversed
+        normed = differences / (denominator + 0.00000000000001) #normalize differences
+        #print(normed)
+        asymmetry_metric = np.sum(np.abs(normed)) # Sum normalized differences
+        #print(asymmetry_metric) 
+        return asymmetry_metric
+    stellar_density  = []
+    rbinmiddles = []
+    zbinmiddles = []
+
+    for i in range(len(x_)):
+        ms, xes, yes, bns = stats.binned_statistic_2d(
+        data_vols['Rxy'][i], data_vols['z'][i], data_vols['mass'][i], 
+        bins=50, range=[[6.59, 9.41], [-zcut, zcut]], statistic='sum'
+    )
+        rbinmids = (xes[:-1] + xes[1:])/2
+        rbinsize = xes[1:] - xes[:-1]
+        zbinsize = yes[1:] - yes[:-1]
+        zbinmids = (yes[:-1] + yes[1:])/2
+        theta_size = theta[1] - theta[0]
+        rbinmiddles.append(rbinmids)
+        zbinmiddles.append(zbinmids)
+        dV = rbinmids*rbinsize*theta_size*zbinsize
+        s = ms.T/dV
+        stellar_density.append(s)
+    asymmetry = []
+    for i in range(len(x_)):
+        fom = calculate_asymmetry(stellar_density[i][:,idx], zbinmiddles[i])
+        asymmetry.append(fom)
+    b_list = [eval(f'bestpars_{i}.b.value') for i in range(1, 17)]
+    norm = plt.Normalize(vmin=np.min(chi), vmax=np.max(chi))
+    cmap = cmr.lavender
+    sc = plt.scatter(asymmetry, b_list, c=chi, cmap=cmap, marker='D')
+    for i, chi_value in enumerate(chi):
+        props = dict(boxstyle='round', facecolor='k', alpha=0.05)  # 
+        plt.text(asymmetry[i] + 0.1, b_list[i], f"{i+1}", ha='center', fontsize=8, color='k', zorder=10)
+    plt.colorbar(sc, label=r'$\chi^{2}$')
+    plt.ylabel('b [kpc]')
+    plt.xlabel('Vertical Asymmetry')
+    plt.tight_layout()
+    #plt.savefig('m12i_scale_height_asymmetry_z35')
+    plt.show()
+
+
+
+
+

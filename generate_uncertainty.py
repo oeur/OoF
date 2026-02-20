@@ -68,7 +68,7 @@ def generate_mcmc_results(simdir, simnum, species, Rcyl, numvols, zcut, file_pat
         
         end_time = time.time()
         elapsed_time = end_time - start_time
-        print(f"Cell execution time for volume {volume + 1}: {elapsed_time} seconds")
+        #print(f"Cell execution time for volume {volume + 1}: {elapsed_time} seconds")
 
 def generate_bootstrap_resamplings(simdir, simnum, species, Rcyl, numvols, zcut, trials, file_path="."): #trials=128
     """
@@ -89,7 +89,7 @@ def generate_bootstrap_resamplings(simdir, simnum, species, Rcyl, numvols, zcut,
     vz_array_list = []
     max_z_list = []
     bdata_list = []
-
+    idx_list = [0]
     for i in range(len(data_vols['z'])):
         z_array = data_vols['z'][i] * u.kpc
         vz_array = data_vols['vz'][i] * (u.km / u.s)
@@ -184,8 +184,14 @@ def generate_bootstrap_resamplings(simdir, simnum, species, Rcyl, numvols, zcut,
         
         end_time = time.time()
         elapsed_time = end_time - start_time
-        print(f"Volume {volume+1} execution time: {elapsed_time} seconds")
+        #print(f"Volume {volume+1} execution time: {elapsed_time} seconds")
 
         with open(file_path / f"bootstrap_res_v{volume+1}.pkl", "wb") as f:
             data_to_save = [res.params for res in bootstrap_res]
             pickle.dump(data_to_save, f)
+# simpath = '/Users/micahoeur/Dropbox/Research/Sarah/FIRE2_m12i_metal_diffusion/output_with_accel' #/scratch/07439/moeur/GalaxiesOnFIRE/metal_diffusion/m12i_r7100/output_with_accel
+# snum = 600
+# spcs = 'star'
+# z_cut = 2.5
+# generate_mcmc_results(simpath, snum, spcs, 8, 16, z_cut, file_path=".")
+# generate_bootstrap_resamplings(simpath, snum, spcs, 8, 16, z_cut, 128, file_path=".")

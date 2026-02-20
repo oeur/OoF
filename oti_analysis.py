@@ -32,7 +32,6 @@ import gizmo_analysis as gizmo
 import utilities as ut
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import cmasher as cmr
-#%matplotlib inline
 
 plt.rcParams.update(plt.rcParamsDefault)
 plt.rcParams.update({'font.size': 20})
@@ -49,9 +48,9 @@ def run_oti_analysis(simdir, simnum, species, Rcyl, numvols, zcut):
     max_z_list = []
     bdata_list = []
 
-    for i in range(len(data_vols['z'])):
-        z_array = data_vols['z'][i] * u.kpc
-        vz_array = data_vols['vz'][i] * (u.km / u.s)
+    for i in range(len(data_vols['Zxy'])):
+        z_array = data_vols['Zxy'][i] * u.kpc
+        vz_array = data_vols['Vzxy'][i] * (u.km / u.s)
         
         z_array_list.append(z_array)
         vz_array_list.append(vz_array)
@@ -79,7 +78,7 @@ def run_oti_analysis(simdir, simnum, species, Rcyl, numvols, zcut):
     bounds_list = []
     init_params_list = []
 
-    for i in range(len(data_vols['z'])):
+    for i in range(len(data_vols['Zxy'])):
         model, bounds, init_params = oti.TorusImaging1DSpline.auto_init( # initializes the model
             bdata_list[i], #The current data segment to be processed
             label_knots=8, #Number of knots for the labels, a parameter related to spline interpolation
@@ -107,7 +106,7 @@ def run_oti_analysis(simdir, simnum, species, Rcyl, numvols, zcut):
     data_kw_list = []
     mask_list = []
 
-    for i in range(len(data_vols['z'])):
+    for i in range(len(data_vols['Zxy'])):
         data_kw = dict(
             pos=bdata_list[i]["pos"],
             vel=bdata_list[i]["vel"],
@@ -128,7 +127,7 @@ def run_oti_analysis(simdir, simnum, species, Rcyl, numvols, zcut):
 
     res_list = []
 
-    for i in range(len(data_vols['z'])):
+    for i in range(len(data_vols['Zxy'])):
         res = model_list[i].optimize(init_params_list[i], objective="gaussian", bounds=bounds_list[i], **data_kw_list[i])
         res_list.append(res)
 
