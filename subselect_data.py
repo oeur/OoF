@@ -17,7 +17,7 @@ def subselect_solar_cyls(simdir, simnum, species, Rcyl, numvols, zcut):
         keep = np.where((((x - float(x_[i])) ** 2 + (y - float(y_[i])) ** 2 ) < 2) & (np.abs(z) < zcut))
         keep_volumes.append(keep)
 
-    data_keys = ['vz', 'z', 'feh', 'mgfe','pos', 'vels', 'x', 'y', 'age', 'Vphixy', 'vx', 'vy', 'az', 'rxyz', 'mass', 'Vzxy', 'Vrxy']
+    data_keys = ['vz', 'Zxy', 'feh', 'mgfe','pos', 'vels', 'x', 'y', 'age', 'Vphixy', 'vx', 'vy', 'az', 'rxyz', 'mass', 'Vzxy', 'Vrxy']
     data_vols = {key: [] for key in data_keys}
     for keep in keep_volumes:
         for key in data_keys:
