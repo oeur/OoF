@@ -8,7 +8,7 @@ version = "0.1.0"
 
 dependencies = [
     "numpy>=1.26.4",
-    "torusimaging>=0.1",
+    "torusimaging",
     "gizmo_analysis>=1.0.2",
     "utilities_awetzel>=1.0.2",
     "astropy>=6.1.7",
