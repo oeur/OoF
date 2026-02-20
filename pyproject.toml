@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "OoF"
+version = "0.1.0"
+
+dependencies = [
+    "numpy>=1.26.4",
+    "torusimaging>=0.1",
+    "gizmo_analysis>=1.0.2",
+    "utilities_awetzel>=1.0.2",
+    "astropy>=6.1.7",
+    "scipy>=1.15.2",
+    "cmasher>=1.8.0",
+    "matplotlib>=3.10.1"
+]
+
