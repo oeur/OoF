@@ -74,7 +74,7 @@ def generate_surface_mass_density_plot(simdir, simnum, species1, species2, Rcyl,
     y_ = np.sin(theta)*8
     part_gas = gizmo.gizmo_io.Read.read_snapshots([species1], 'index', simnum, simulation_directory=simdir, assign_hosts_rotation=True, assign_hosts=True)
     data_vols = subselect_solar_cyls(simdir, simnum, 'star', Rcyl, numvols, zcut)
-    colors = [cmr.infinity(i / len(data_vols['z'])) for i in range(len(data_vols['z']))]
+    colors = [cmr.infinity(i / numvols) for i in range(numvols)]
     x_gas      = part_gas[species1].prop('host.distance.principal.cartesian')[:,0]
     y_gas      = part_gas[species1].prop('host.distance.principal.cartesian')[:,1]
     z_gas      = part_gas[species1].prop('host.distance.principal.cartesian')[:,2]
