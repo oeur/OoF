@@ -1,0 +1,11 @@
+numpy>=1.26.4
+torusimaging
+gizmo_analysis>=1.0.2
+utilities_awetzel>=1.0.2
+astropy>=6.1.7
+scipy>=1.15.2
+cmasher>=1.8.0
+matplotlib>=3.10.1
+sphinx-rtd-theme
+sympy
+pandas
