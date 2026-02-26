@@ -32,8 +32,8 @@ import utilities as ut
 import pickle
 import time
 from pathlib import Path
-from oti_analysis import run_oti_analysis
-from subselect_data import subselect_solar_cyls
+from .oti_analysis import run_oti_analysis
+from .subselect_data import subselect_solar_cyls
 def generate_mcmc_results(simdir, simnum, species, Rcyl, numvols, zcut, file_path="."):
     """
     Run MCMC for a given set of volumes and save the results to files.

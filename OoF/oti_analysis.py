@@ -1,4 +1,4 @@
-from subselect_data import subselect_solar_cyls
+from .subselect_data import subselect_solar_cyls
 from astropy.constants import G
 from astropy import constants as const
 import astropy.coordinates as coord

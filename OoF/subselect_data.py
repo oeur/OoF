@@ -1,4 +1,4 @@
-from load_data import load_simulation_data
+from .load_data import load_simulation_data
 import numpy as np
 
 def subselect_solar_cyls(simdir, simnum, species, Rcyl, numvols, zcut):

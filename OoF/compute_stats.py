@@ -1,6 +1,6 @@
-from oti_analysis import run_oti_analysis
-from subselect_data import subselect_solar_cyls
-from load_data import load_simulation_data
+from .oti_analysis import run_oti_analysis
+from .subselect_data import subselect_solar_cyls
+from .load_data import load_simulation_data
 import matplotlib.patches as mpatches
 from astropy.constants import G
 from astropy import constants as const
